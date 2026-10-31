@@ -308,6 +308,31 @@ def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
     db.add(otp_record)
     db.commit()
 
+    # If FAST2SMS_API_KEY is configured, dispatch real SMS to Indian mobile handset
+    fast2sms_key = os.environ.get("FAST2SMS_API_KEY")
+    if fast2sms_key:
+        try:
+            import urllib.request
+            sms_url = "https://www.fast2sms.com/dev/bulkV2"
+            sms_payload = json.dumps({
+                "route": "otp",
+                "variables_values": otp_code,
+                "numbers": clean_phone
+            }).encode("utf-8")
+            sms_req = urllib.request.Request(
+                sms_url,
+                data=sms_payload,
+                headers={
+                    "authorization": fast2sms_key,
+                    "Content-Type": "application/json",
+                    "User-Agent": "YojanaSahayak/1.0"
+                }
+            )
+            with urllib.request.urlopen(sms_req, timeout=5) as sms_res:
+                print(f"[FAST2SMS] Real SMS dispatched to +91 {clean_phone}: status {sms_res.status}")
+        except Exception as sms_err:
+            print(f"[FAST2SMS WARNING] Could not dispatch real SMS: {sms_err}")
+
     # Log to simulated SMS Gateway
     masked_phone = f"+91 {clean_phone[:2]}******{clean_phone[-2:]}"
     print(f"\n=======================================================")

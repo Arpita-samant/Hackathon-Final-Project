@@ -78,44 +78,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg("");
     setLoading(true);
 
-    const cleanPhone = phone.trim().replace("+91", "").replace(/\s/g, "");
-    if (cleanPhone.length !== 10 || !/^\d+$/.test(cleanPhone)) {
-      setErrorMsg(lang === "hi" ? "कृपया 10 अंकों का वैध भारतीय मोबाइल नंबर दर्ज करें।" : "Please enter a valid 10-digit Indian mobile number.");
+    const cleanPhone = phone.replace(/\D/g, "").slice(-10);
+    if (cleanPhone.length !== 10) {
+      setErrorMsg(lang === "hi" ? "कृपया 10 अंकों का वैध भारतीय मोबाइल नंबर दर्ज करें (उदा. 9876543210)।" : "Please enter a valid 10-digit Indian mobile number (e.g., 9876543210).");
       setLoading(false);
       return;
     }
 
+    // Generate immediate 6-digit verification code so user is never blocked
+    const demoCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setOtp(demoCode);
+    setSmsSimulationBanner(
+      lang === "hi"
+        ? `📩 एसएमएस गेटवे: "योजना सहायक सत्यापन कोड: ${demoCode} (10 मिनट के लिए वैध)"`
+        : `📩 SMS Gateway Alert: "Your Yojana Sahayak OTP code is ${demoCode}. (Valid for 10 minutes)"`
+    );
+    setStep("otp");
+
+    // Asynchronously notify backend & dispatch SMS gateway
     try {
-      const res = await fetch("/api/auth/send-otp", {
+      fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: cleanPhone, purpose: mode }),
-      });
-
-      let demoCode = "123456";
-      try {
-        const data = await res.json();
+      })
+      .then((res) => res.json())
+      .then((data) => {
         if (data && data.demo_otp) {
-          demoCode = data.demo_otp;
+          setOtp(data.demo_otp);
+          setSmsSimulationBanner(
+            lang === "hi"
+              ? `📩 एसएमएस गेटवे: "योजना सहायक सत्यापन कोड: ${data.demo_otp} (10 मिनट के लिए वैध)"`
+              : `📩 SMS Gateway Alert: "Your Yojana Sahayak OTP code is ${data.demo_otp}. (Valid for 10 minutes)"`
+          );
         }
-      } catch (_) {}
+      })
+      .catch((err) => console.warn("Background SMS OTP call notice:", err));
+    } catch (_) {}
 
-      setSmsSimulationBanner(
-        `📩 SMS Gateway: "Your Yojana Sahayak verification code is ${demoCode}. Valid for 10 minutes."`
-      );
-      setOtp(demoCode);
-      setStep("otp");
-    } catch (err: any) {
-      // Resilient fallback for instant testing
-      const fallbackCode = "123456";
-      setSmsSimulationBanner(
-        `📩 SMS Gateway: "Your Yojana Sahayak verification code is ${fallbackCode}. Valid for 10 minutes."`
-      );
-      setOtp(fallbackCode);
-      setStep("otp");
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   const handleVerifyOtpAndSubmit = async (e: React.FormEvent) => {
@@ -349,10 +350,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                       <input
                         type="text"
-                        required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder={lang === "hi" ? "उदा. राहुल शर्मा" : "e.g., Rahul Sharma"}
+                        placeholder={lang === "hi" ? "उदा. राहुल शर्मा (वैकल्पिक)" : "e.g., Rahul Sharma (Optional)"}
                         className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none"
                       />
                     </div>
@@ -375,11 +375,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <input
                     type="tel"
                     required
-                    maxLength={10}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      const cleaned = digits.length > 10 && digits.startsWith("91") ? digits.slice(2, 12) : digits.slice(0, 10);
+                      setPhone(cleaned);
+                      if (errorMsg) setErrorMsg("");
+                    }}
                     placeholder="9876543210"
-                    className="w-full pl-16 pr-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none"
+                    className="w-full pl-16 pr-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none tracking-wider"
                   />
                 </div>
               </div>
