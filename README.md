@@ -57,7 +57,9 @@ India has a vast array of welfare, scholarship, and agricultural schemes designe
 
 ### 6. Authentication & Secure Onboarding
 
-- **Mobile Verification:** SMS-based OTP verification for secure login and profile creation.
+- **Gmail OTP Verification:** Secure 6-digit verification code dispatched directly to citizen Gmail inboxes.
+- **Security & Cryptography:** Salted SHA-256 OTP hashing, 5-minute validity, single-use invalidation, and rate-limiting.
+- **Session & Profile Security:** bcrypt password hashing with signed JWTs and persistent JSON storage.
 - **Role Management:** Support for Guest Access, Registered Citizens, and Community Volunteers.
 
 ### 7. Proactive Notifications Engine
