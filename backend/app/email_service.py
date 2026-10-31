@@ -32,14 +32,14 @@ def get_smtp_credentials():
         os.getenv("GMAIL_USER")
         or os.getenv("SMTP_USER")
         or os.getenv("EMAIL_USER")
-        or ""
+        or "samantarpita70@gmail.com"
     ).strip()
 
     raw_password = (
         os.getenv("GMAIL_APP_PASSWORD")
         or os.getenv("SMTP_PASSWORD")
         or os.getenv("EMAIL_PASSWORD")
-        or ""
+        or "itqzdqantnhcvpok"
     ).strip()
 
     # Google App Passwords are 16 lowercase characters often formatted with spaces (e.g. "abcd efgh ijkl mnop")
