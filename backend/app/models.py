@@ -102,7 +102,8 @@ class SendOTPRequest(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     phone: str
-    otp: str
+    otp: Optional[str] = None
+    otp_code: Optional[str] = None
     name: Optional[str] = "Citizen"
     occupation_category: Optional[str] = "Farmer"
     state: Optional[str] = "All-India"
@@ -112,6 +113,7 @@ class VerifyOTPRequest(BaseModel):
 class LoginRequest(BaseModel):
     phone: str
     otp: Optional[str] = None
+    otp_code: Optional[str] = None
 
 class UserProfileResponse(BaseModel):
     id: str
