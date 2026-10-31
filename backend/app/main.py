@@ -21,6 +21,8 @@ from app.models import (
     ChatResponse,
     ScamCheckRequest,
     ScamCheckResponse,
+    SendEmailOTPRequest,
+    VerifyEmailOTPRequest,
     RegisterRequest,
     SendOTPRequest,
     VerifyOTPRequest,
@@ -34,7 +36,11 @@ from app.family_engine import evaluate_family_household
 from app.rag_engine import query_rag
 from app.scam_engine import analyze_scam_text
 from app.data_collector import DataCollectorService
+from app.email_service import send_email_otp
+from app.otp_service import generate_and_store_otp, verify_stored_otp
+
 from app.user_store import (
+    create_verified_user,
     register_user,
     authenticate_user,
     get_user_by_id,
@@ -342,6 +348,74 @@ def get_current_user(
             detail="Authentication required. Please sign in to access your profile."
         )
     return user
+
+@app.post("/api/auth/send-email-otp", tags=["Citizen Auth"])
+def send_email_otp_endpoint(payload: SendEmailOTPRequest):
+    """
+    Sends a 6-digit verification code to the citizen's Gmail inbox.
+    Enforces rate-limiting, 30s cooldown, and verifies account presence depending on purpose.
+    """
+    clean_email = payload.email.strip().lower()
+    if not clean_email or "@" not in clean_email or "." not in clean_email:
+        raise HTTPException(status_code=400, detail="Please enter a valid Gmail address.")
+
+    existing_user = get_user_by_email(clean_email)
+
+    if payload.purpose == "signup":
+        if existing_user:
+            raise HTTPException(status_code=400, detail="An account with this email already exists. Please sign in instead.")
+    elif payload.purpose == "login":
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="No registered account found with this email. Please sign up first.")
+
+    success, raw_otp, msg = generate_and_store_otp(clean_email, payload.purpose)
+    if not success:
+        raise HTTPException(status_code=429, detail=msg)
+
+    # Dispatch email
+    sent, email_msg = send_email_otp(clean_email, raw_otp, payload.purpose)
+    if not sent:
+        raise HTTPException(status_code=500, detail=email_msg)
+
+    masked = f"{clean_email[:3]}***@{clean_email.split('@')[-1]}"
+    return {
+        "status": "success",
+        "message": f"Verification code sent to {masked}. Valid for 5 minutes.",
+        "email": clean_email,
+        "cooldown_seconds": 30
+    }
+
+@app.post("/api/auth/verify-email-otp", response_model=UserProfileResponse, tags=["Citizen Auth"])
+def verify_email_otp_endpoint(payload: VerifyEmailOTPRequest):
+    """
+    Verifies the 6-digit Gmail verification code.
+    If purpose == 'signup': creates new citizen account and returns signed JWT.
+    If purpose == 'login': authenticates registered citizen and returns signed JWT.
+    """
+    clean_email = payload.email.strip().lower()
+    clean_otp = payload.otp.strip()
+
+    is_valid, reason = verify_stored_otp(clean_email, clean_otp, payload.purpose)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=reason)
+
+    if payload.purpose == "signup":
+        res = create_verified_user(
+            email=clean_email,
+            name=payload.name or "Citizen",
+            occupation_category=payload.occupation_category or "Farmer",
+            state=payload.state or "All-India",
+            caste_category=payload.caste_category or "General",
+            annual_income=payload.annual_income or 0.0
+        )
+        return format_user_profile_response(res["user"], res["token"])
+    else:
+        user = get_user_by_email(clean_email)
+        if not user:
+            res = create_verified_user(email=clean_email, name="Citizen User")
+            return format_user_profile_response(res["user"], res["token"])
+        token = create_jwt_token(user["id"], clean_email)
+        return format_user_profile_response(user, token)
 
 @app.post("/api/auth/register", response_model=UserProfileResponse, tags=["Citizen Auth"])
 @app.post("/api/auth/signup", response_model=UserProfileResponse, tags=["Citizen Auth"])

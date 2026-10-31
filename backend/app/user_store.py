@@ -159,6 +159,72 @@ def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
             return user
     return None
 
+def create_verified_user(
+    email: str,
+    name: str = "Citizen",
+    occupation_category: str = "Farmer",
+    state: str = "All-India",
+    caste_category: str = "General",
+    annual_income: float = 0.0
+) -> Dict[str, Any]:
+    """
+    Creates a new citizen account verified via Gmail OTP.
+    Persists citizen to users.json and returns user dictionary and signed JWT token.
+    """
+    clean_email = email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise ValueError("Please provide a valid Gmail address.")
+
+    existing = get_user_by_email(clean_email)
+    if existing:
+        token = create_jwt_token(existing["id"], clean_email)
+        return {"user": existing, "token": token}
+
+    user_id = f"usr_{uuid.uuid4().hex[:12]}"
+
+    new_user = {
+        "id": user_id,
+        "email": clean_email,
+        "name": name.strip() or "Citizen",
+        "occupation_category": occupation_category or "Farmer",
+        "state": state or "All-India",
+        "caste_category": caste_category or "General",
+        "annual_income": float(annual_income or 0.0),
+        "aadhaar_number": None,
+        "pan_number": None,
+        "documents": {
+            "aadhaar": {"uploaded": False, "status": "Not Uploaded"},
+            "pan": {"uploaded": False, "status": "Not Uploaded"},
+            "ration_card": {"uploaded": False, "status": "Not Uploaded"},
+            "income_certificate": {"uploaded": False, "status": "Not Uploaded"}
+        },
+        "family_members": [
+            {
+                "id": f"fam_{uuid.uuid4().hex[:8]}",
+                "name": name.strip() or "Citizen",
+                "relation": "Self",
+                "age": 22 if occupation_category == "Student" else 35,
+                "gender": "Male",
+                "annual_income": float(annual_income or 0.0),
+                "occupation": occupation_category or "Farmer",
+                "caste_category": caste_category or "General",
+                "state": state or "All-India",
+                "is_student": (occupation_category == "Student")
+            }
+        ],
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+    users = load_users_from_json()
+    users.append(new_user)
+    save_users_to_json(users)
+
+    token = create_jwt_token(user_id, clean_email)
+    return {
+        "user": new_user,
+        "token": token
+    }
+
 def register_user(
     email: str,
     password: str,

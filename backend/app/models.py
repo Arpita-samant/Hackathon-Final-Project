@@ -96,6 +96,20 @@ class ScamCheckResponse(BaseModel):
     safe_guidance_hi: str
     official_verification_url: Optional[str] = None
 
+class SendEmailOTPRequest(BaseModel):
+    email: str = Field(..., description="Citizen Gmail address")
+    purpose: str = Field("login", description="'login' or 'signup'")
+
+class VerifyEmailOTPRequest(BaseModel):
+    email: str = Field(..., description="Citizen Gmail address")
+    otp: str = Field(..., description="6-digit verification code received in Gmail")
+    purpose: str = Field("login", description="'login' or 'signup'")
+    name: Optional[str] = "Citizen"
+    occupation_category: Optional[str] = "Farmer"
+    state: Optional[str] = "All-India"
+    caste_category: Optional[str] = "General"
+    annual_income: Optional[float] = 0.0
+
 class SendOTPRequest(BaseModel):
     phone: str = Field(..., description="10-digit Indian Mobile Number")
     purpose: str = Field("signup", description="signup or login")
