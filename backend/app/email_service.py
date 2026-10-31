@@ -1,20 +1,57 @@
 """
 Email Service for Sending Verification OTPs via Gmail SMTP.
-Supports Gmail App Passwords and standard SMTP configurations.
+Supports Google App Passwords, dual-port fallback (587 STARTTLS / 465 SSL),
+and comprehensive diagnostics when credentials are missing or incorrect.
 """
 
 import os
 import smtplib
 import ssl
+from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Tuple
+from dotenv import load_dotenv
 
-# Environment configurations for Gmail SMTP
-GMAIL_USER = os.getenv("GMAIL_USER") or os.getenv("SMTP_USER") or os.getenv("EMAIL_USER")
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD") or os.getenv("SMTP_PASSWORD") or os.getenv("EMAIL_PASSWORD")
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+# Ensure .env is read on module import
+_base_dir = Path(__file__).resolve().parent.parent
+if (_base_dir / ".env").exists():
+    load_dotenv(_base_dir / ".env", override=False)
+if (_base_dir.parent / ".env").exists():
+    load_dotenv(_base_dir.parent / ".env", override=False)
+
+def get_smtp_credentials():
+    """Re-evaluates environment variables on demand so changes in .env are immediately active."""
+    # Reload from disk if available
+    if (_base_dir / ".env").exists():
+        load_dotenv(_base_dir / ".env", override=True)
+    if (_base_dir.parent / ".env").exists():
+        load_dotenv(_base_dir.parent / ".env", override=False)
+
+    gmail_user = (
+        os.getenv("GMAIL_USER")
+        or os.getenv("SMTP_USER")
+        or os.getenv("EMAIL_USER")
+        or ""
+    ).strip()
+
+    raw_password = (
+        os.getenv("GMAIL_APP_PASSWORD")
+        or os.getenv("SMTP_PASSWORD")
+        or os.getenv("EMAIL_PASSWORD")
+        or ""
+    ).strip()
+
+    # Google App Passwords are 16 lowercase characters often formatted with spaces (e.g. "abcd efgh ijkl mnop")
+    gmail_pass = raw_password.replace(" ", "")
+
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
+    try:
+        smtp_port = int(os.getenv("SMTP_PORT", "587").strip())
+    except Exception:
+        smtp_port = 587
+
+    return gmail_user, gmail_pass, smtp_host, smtp_port
 
 def build_otp_email_html(otp_code: str, purpose: str = "login") -> str:
     """
@@ -110,9 +147,6 @@ def build_otp_email_html(otp_code: str, purpose: str = "login") -> str:
       font-weight: 600;
       color: #b45309;
       margin-top: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }}
     .security-notice {{
       background: #f8fafc;
@@ -172,54 +206,77 @@ def send_email_otp(to_email: str, otp_code: str, purpose: str = "login") -> Tupl
     Returns (success: bool, status_message: str).
     """
     clean_email = to_email.strip().lower()
+    gmail_user, gmail_pass, smtp_host, smtp_port = get_smtp_credentials()
 
-    # Read dynamically on each request to allow hot updates from environment
-    gmail_user = os.getenv("GMAIL_USER") or os.getenv("SMTP_USER") or os.getenv("EMAIL_USER") or GMAIL_USER
-    gmail_pass = os.getenv("GMAIL_APP_PASSWORD") or os.getenv("SMTP_PASSWORD") or os.getenv("EMAIL_PASSWORD") or GMAIL_APP_PASSWORD
-    smtp_host = os.getenv("SMTP_HOST") or SMTP_HOST
-    smtp_port = int(os.getenv("SMTP_PORT") or str(SMTP_PORT))
-
+    # 1. Validation: Credentials MUST be configured
     if not gmail_user or not gmail_pass:
-        masked_email = f"{clean_email[:3]}***@{clean_email.split('@')[-1]}" if '@' in clean_email else clean_email
-        print(f"\n=======================================================")
-        print(f"[GMAIL SMTP DISPATCH] To: {clean_email}")
-        print(f"[GMAIL SMTP DISPATCH] Purpose: {purpose.upper()}")
-        print(f"[GMAIL SMTP DISPATCH] 6-Digit OTP: {otp_code}")
-        print(f"[GMAIL SMTP NOTICE] To deliver to real inbox, provide GMAIL_USER and GMAIL_APP_PASSWORD in .env")
-        print(f"=======================================================\n")
-        return True, "Code generated and dispatched"
-
-    try:
-        subject = (
-            f"🔐 Your Yojana Sahayak Login Verification Code: {otp_code}" 
-            if purpose == "login" 
-            else f"🔐 Your Yojana Sahayak Registration Code: {otp_code}"
+        error_msg = (
+            "Gmail SMTP not configured: GMAIL_USER and GMAIL_APP_PASSWORD are missing from backend/.env. "
+            "Please add your Gmail address and 16-character Google App Password (from https://myaccount.google.com/apppasswords) to backend/.env."
         )
+        print(f"\n[EMAIL SERVICE WARNING] {error_msg}")
+        return False, error_msg
 
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"Yojana Sahayak Verification <{gmail_user}>"
-        msg["To"] = clean_email
+    subject = (
+        f"🔐 Your Yojana Sahayak Login Verification Code: {otp_code}" 
+        if purpose == "login" 
+        else f"🔐 Your Yojana Sahayak Registration Code: {otp_code}"
+    )
 
-        plain_text = f"Your Yojana Sahayak verification code is: {otp_code}. Valid for 5 minutes. Do not share with anyone."
-        html_content = build_otp_email_html(otp_code, purpose)
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"Yojana Sahayak <{gmail_user}>"
+    msg["To"] = clean_email
 
-        msg.attach(MIMEText(plain_text, "plain", "utf-8"))
-        msg.attach(MIMEText(html_content, "html", "utf-8"))
+    plain_text = f"Your Yojana Sahayak verification code is: {otp_code}. Valid for 5 minutes. Do not share with anyone."
+    html_content = build_otp_email_html(otp_code, purpose)
 
-        context = ssl.create_default_context()
-        
-        # Connect to Gmail SMTP server
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
+    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+    context = ssl.create_default_context()
+
+    # Attempt 1: Port 587 with STARTTLS
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
             server.ehlo()
             server.starttls(context=context)
             server.ehlo()
             server.login(gmail_user, gmail_pass)
             server.sendmail(gmail_user, clean_email, msg.as_string())
 
-        print(f"[EMAIL SERVICE SUCCESS] Real Gmail OTP sent to {clean_email}")
-        return True, "Email dispatched successfully"
+        print(f"[EMAIL SERVICE SUCCESS] Real Gmail OTP sent via port {smtp_port} to {clean_email}")
+        return True, "Verification email dispatched successfully to your Gmail inbox."
 
-    except Exception as e:
-        print(f"[EMAIL SERVICE ERROR] Failed to send email to {clean_email}: {e}")
-        return False, f"Failed to send email: {str(e)}"
+    except smtplib.SMTPAuthenticationError as auth_err:
+        err_text = (
+            "Gmail SMTP Authentication Failed: Invalid Google App Password. "
+            "Please make sure GMAIL_USER is your full Gmail address and GMAIL_APP_PASSWORD is a valid 16-character Google App Password (generate at https://myaccount.google.com/apppasswords)."
+        )
+        print(f"[EMAIL SERVICE AUTH ERROR] {auth_err}")
+        return False, err_text
+
+    except Exception as port587_err:
+        print(f"[EMAIL SERVICE] Port {smtp_port} attempt failed ({port587_err}), attempting SSL port 465 fallback...")
+
+    # Attempt 2: Fallback to Port 465 SSL
+    try:
+        with smtplib.SMTP_SSL(smtp_host, 465, context=context, timeout=10) as server:
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, clean_email, msg.as_string())
+
+        print(f"[EMAIL SERVICE SUCCESS] Real Gmail OTP sent via SSL port 465 to {clean_email}")
+        return True, "Verification email dispatched successfully to your Gmail inbox."
+
+    except smtplib.SMTPAuthenticationError as auth_err:
+        err_text = (
+            "Gmail SMTP Authentication Failed: Invalid Google App Password. "
+            "Please make sure GMAIL_USER is your full Gmail address and GMAIL_APP_PASSWORD is a valid 16-character Google App Password (generate at https://myaccount.google.com/apppasswords)."
+        )
+        print(f"[EMAIL SERVICE AUTH ERROR] {auth_err}")
+        return False, err_text
+
+    except Exception as fallback_err:
+        final_err = f"Failed to send email to {clean_email} via Gmail SMTP: {str(fallback_err)}"
+        print(f"[EMAIL SERVICE FATAL ERROR] {final_err}")
+        return False, final_err

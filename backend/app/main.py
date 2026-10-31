@@ -10,6 +10,16 @@ import uuid
 import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded
+_base = Path(__file__).resolve().parent.parent
+if (_base / '.env').exists():
+    load_dotenv(_base / '.env', override=False)
+if (_base.parent / '.env').exists():
+    load_dotenv(_base.parent / '.env', override=False)
+
 from fastapi import FastAPI, Depends, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
