@@ -136,28 +136,7 @@ Data collection Websites
 * **Buddy4Study (`buddy4study.com`):** India’s largest aggregator for private, corporate, and NGO-funded scholarships (e.g., L'Oréal, HDFC, Keep India Smiling).
 * **Vidyasaarathi (`vidyasaarathi.co.in`):** An NSDL e-Gov portal featuring education finance and CSR-backed private schemes for students.
 * **Major Corporate Foundations:** Direct websites for Tata Trusts, Reliance Foundation, and HDFC Parivartan for extracting private vocational grants, women's empowerment initiatives, and rural livelihood programs.
- tell me website name and link in short Data collection Websites
 
-**Government Welfare & Central Services**
-
-* **DBT Bharat (`dbtbharat.gov.in`):** Contains master lists and operational guidelines for all Direct Benefit Transfer schemes across ministries.
-* **UMANG (`umang.gov.in`):** Centralizes hundreds of central and state-level services; useful for extracting eligibility criteria for state-specific welfare.
-* **State e-District Portals (e.g., Uttarakhand Apuni Sarkar):** Essential for localized state-level schemes, pensions, and regional financial aid.
-
-**Agriculture & Rural Development**
-
-* **Kisan Suvidha (`kisansuvidha.gov.in`):** Consolidates farmer-centric schemes, including PMFBY (crop insurance), PM-KISAN, and agricultural machinery subsidies.
-* **Dept of Agriculture & Farmers Welfare (`agricoop.gov.in`):** The primary source for downloading detailed, official PDF scheme guidelines, budget allocations, and policy circulars for RAG ingestion.
-
-**Education & Scholarships**
-
-* **National Scholarship Portal (`scholarships.gov.in`):** The definitive federal database for central, state, AICTE, and UGC scholarship eligibility documents and deadlines.
-
-**Non-Government (Private CSR & NGOs)**
-
-* **Buddy4Study (`buddy4study.com`):** India’s largest aggregator for private, corporate, and NGO-funded scholarships (e.g., L'Oréal, HDFC, Keep India Smiling).
-* **Vidyasaarathi (`vidyasaarathi.co.in`):** An NSDL e-Gov portal featuring education finance and CSR-backed private schemes for students.
-* **Major Corporate Foundations:** Direct websites for Tata Trusts, Reliance Foundation, and HDFC Parivartan for extracting private vocational grants, women's empowerment initiatives, and rural livelihood programs.
 ## 📋 Minimum Working Version (MVV) Scope
 
 1. **Document Collection:** 10 to 20 foundational public scheme documents (PM-KISAN, Ayushman Bharat, major scholarships).
@@ -177,5 +156,30 @@ cd frontend
 npm run dev
 
 
-🌐 Project URLs
-- Frontend: http://localhost:3000
+```
+
+---
+
+## 🌐 Production & Vercel Deployment
+
+* **Backend Production API (Vercel):** [https://hackathon-final-project-beige.vercel.app](https://hackathon-final-project-beige.vercel.app)
+* **Interactive API Docs (Swagger):** [https://hackathon-final-project-beige.vercel.app/docs](https://hackathon-final-project-beige.vercel.app/docs)
+* **API Health Status:** [https://hackathon-final-project-beige.vercel.app/api/health](https://hackathon-final-project-beige.vercel.app/api/health)
+
+### Environment Variables
+Configure these in your Vercel Dashboard under **Project Settings > Environment Variables** or in your local `.env`:
+
+| Variable | Recommended Production Value | Description |
+| :--- | :--- | :--- |
+| `BACKEND_URL` | `https://hackathon-final-project-beige.vercel.app` | Target FastAPI backend URL for Next.js API route proxies |
+| `NEXT_PUBLIC_BASE_URL` | `https://hackathon-final-project-beige.vercel.app` | Public client base URL |
+| `VITE_BASE_URL` | `https://hackathon-final-project-beige.vercel.app` | Frontend client fallback for API calls |
+| `GEMINI_API_KEY` | *(Optional)* | Google Gemini API key for enhanced generative explanations |
+
+---
+
+## 🛡️ Security, Privacy & Data Isolation
+
+* **Citizen Data Isolation:** Family member records, household incomes, and document uploads are strictly isolated per authenticated citizen account (`yojana_family_members_<userId>`).
+* **Unauthenticated Visitor Shield:** Anonymous visitors cannot access or view private family members or household benefit figures.
+* **Direct Form Switching:** Instant, dedicated navigation between Citizen Login and New Citizen Registration.
