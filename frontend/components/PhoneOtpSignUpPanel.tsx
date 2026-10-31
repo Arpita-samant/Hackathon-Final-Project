@@ -102,6 +102,8 @@ export const PhoneOtpSignUpPanel: React.FC<PhoneOtpSignUpPanelProps> = ({
             setErrorMsg("Firebase Domain Notice: Add website domain to Firebase Console -> Authentication -> Authorized domains. (Use Demo Code below)");
           } else if (fbErrMsg.includes("operation-not-allowed")) {
             setErrorMsg("Firebase Notice: Enable Phone auth in Firebase Console -> Authentication -> Sign-in method. (Use Demo Code below)");
+          } else if (fbErrMsg.includes("already been rendered")) {
+            setErrorMsg("reCAPTCHA session has been refreshed. Please click 'Get OTP' again.");
           }
           await new Promise((resolve) => setTimeout(resolve, 800));
         }

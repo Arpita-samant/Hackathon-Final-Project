@@ -57,6 +57,8 @@ export function getFirebaseAuth(): Auth | null {
 /**
  * Dispatches an SMS verification code to an Indian mobile number (+91...)
  * via Firebase Phone Authentication with invisible reCAPTCHA.
+ * 
+ * Safely resets DOM containers to prevent "reCAPTCHA has already been rendered in this element".
  */
 export async function sendFirebaseOtp(
   phone10Digits: string,
@@ -71,15 +73,7 @@ export async function sendFirebaseOtp(
   const clean = phone10Digits.replace(/\D/g, "").slice(-10);
   const formattedPhone = `+91${clean}`;
 
-  // Ensure DOM container exists
-  let containerEl = document.getElementById(containerId);
-  if (!containerEl) {
-    containerEl = document.createElement("div");
-    containerEl.id = containerId;
-    document.body.appendChild(containerEl);
-  }
-
-  // Clean previous verifier if exists
+  // 1. Destroy and clear any previous verifier instance
   if (typeof window !== "undefined" && (window as any).__yojanaRecaptchaVerifier) {
     try {
       (window as any).__yojanaRecaptchaVerifier.clear();
@@ -87,7 +81,24 @@ export async function sendFirebaseOtp(
     (window as any).__yojanaRecaptchaVerifier = null;
   }
 
-  const appVerifier = new RecaptchaVerifier(auth, containerId, {
+  // 2. Ensure pristine container element by replacing old container with clean clone
+  let targetElement: HTMLElement;
+  const existingEl = typeof document !== "undefined" ? document.getElementById(containerId) : null;
+  
+  if (existingEl && existingEl.parentNode) {
+    // Clone without children to completely purge any previous reCAPTCHA widget / iframe
+    const freshEl = existingEl.cloneNode(false) as HTMLElement;
+    existingEl.parentNode.replaceChild(freshEl, existingEl);
+    targetElement = freshEl;
+  } else {
+    targetElement = document.createElement("div");
+    targetElement.id = containerId;
+    targetElement.style.display = "none";
+    document.body.appendChild(targetElement);
+  }
+
+  // 3. Initialize fresh RecaptchaVerifier
+  const appVerifier = new RecaptchaVerifier(auth, targetElement, {
     size: "invisible",
     callback: () => {
       // reCAPTCHA solved

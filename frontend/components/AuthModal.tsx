@@ -151,6 +151,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           friendlyReason = lang === "hi"
             ? "Phone Sign-in बंद है: कृपया Firebase Console -> Authentication -> Sign-in method में जाकर 'Phone' को Enable करें।"
             : "Phone Sign-in Disabled: Please enable 'Phone' under Firebase Console -> Authentication -> Sign-in method.";
+        } else if (fbErrMsg.includes("already been rendered")) {
+          friendlyReason = lang === "hi"
+            ? "reCAPTCHA रिसेट कर दिया गया है। कृपया दोबारा 'ओटीपी प्राप्त करें' पर क्लिक करें।"
+            : "reCAPTCHA session has been refreshed. Please click 'Get OTP' again.";
         } else if (fbErrMsg.includes("quota-exceeded") || fbErrMsg.includes("too-many-requests")) {
           friendlyReason = lang === "hi"
             ? "एसएमएस कोटा समाप्त: Firebase SMS सीमा पूरी हो चुकी है। कृपया डेमो टेस्ट कोड (123456) का उपयोग करें।"
