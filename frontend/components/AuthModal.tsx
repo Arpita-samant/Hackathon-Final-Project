@@ -136,6 +136,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       } catch (firebaseErr: any) {
         console.warn("Firebase Phone Auth SMS error, falling back to local gateway:", firebaseErr);
+        const fbErrMsg = firebaseErr?.code || firebaseErr?.message || "";
+        if (fbErrMsg.includes("unauthorized-domain")) {
+          setErrorMsg(
+            lang === "hi"
+              ? "Firebase Domain Warning: कृपया Firebase Console में Authorized Domains में अपनी वेबसाइट का डोमेन जोड़ें। (परीक्षण हेतु नीचे ⚡ टेस्ट कोड 123456 उपयोग करें)"
+              : "Firebase Domain Warning: Please add this website domain to Firebase Console -> Authentication -> Settings -> Authorized domains. (Use ⚡ Demo Code 123456 below to test)"
+          );
+        } else if (fbErrMsg.includes("operation-not-allowed")) {
+          setErrorMsg(
+            lang === "hi"
+              ? "Firebase Notice: कृपया Firebase Console में Phone Provider सक्षम करें। (परीक्षण हेतु नीचे ⚡ टेस्ट कोड 123456 उपयोग करें)"
+              : "Firebase Notice: Please enable 'Phone' under Firebase Console -> Authentication -> Sign-in method. (Use ⚡ Demo Code 123456 below to test)"
+          );
+        }
         // Continue to fallback below
       }
     }

@@ -97,6 +97,12 @@ export const PhoneOtpSignUpPanel: React.FC<PhoneOtpSignUpPanelProps> = ({
           setConfirmationResult(confirmation);
         } catch (firebaseErr: any) {
           console.warn("Firebase Phone Auth error, falling back to simulated delay:", firebaseErr);
+          const fbErrMsg = firebaseErr?.code || firebaseErr?.message || "";
+          if (fbErrMsg.includes("unauthorized-domain")) {
+            setErrorMsg("Firebase Domain Notice: Add website domain to Firebase Console -> Authentication -> Authorized domains. (Use Demo Code below)");
+          } else if (fbErrMsg.includes("operation-not-allowed")) {
+            setErrorMsg("Firebase Notice: Enable Phone auth in Firebase Console -> Authentication -> Sign-in method. (Use Demo Code below)");
+          }
           await new Promise((resolve) => setTimeout(resolve, 800));
         }
       } else {
