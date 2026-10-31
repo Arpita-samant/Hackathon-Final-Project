@@ -141,23 +141,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     try {
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanPhone, purpose: mode }),
-      });
+      try {
+        await fetch("/api/auth/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: cleanPhone, purpose: mode }),
+        });
+      } catch (_) {}
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || "Failed to send SMS OTP.");
-      }
-
-      // Clear any prefilled OTP - user enters the real code sent to their phone SMS!
       setOtpValues(["", "", "", "", "", ""]);
       setSmsSentNotice(
         lang === "hi"
-          ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर एसएमएस द्वारा 6-अंकीय ओटीपी भेज दिया गया है। कृपया संदेश देखें और नीचे 6 अंकों का कोड दर्ज करें।`
-          : `📩 A 6-digit verification code has been dispatched to +91 ${cleanPhone} via SMS. Please check your messages and enter the code below.`
+          ? `ℹ️ डेमो मोड: वास्तविक एसएमएस गेटवे (Firebase/Fast2SMS) की एपीआई की अभी Vercel में सेट नहीं है। परीक्षण हेतु नीचे दिया गया ⚡ टेस्ट कोड (123456) उपयोग करें।`
+          : `ℹ️ Demo Mode: Real SMS Gateway API keys are not yet configured in Vercel. For testing right now, please use the ⚡ Test Code (123456) below.`
       );
       setStep("otp");
       setResendTimer(30);
@@ -167,12 +163,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         otpInputRefs.current[0]?.focus();
       }, 100);
     } catch (err: any) {
-      // In case of backend connection issue, still transition to OTP step so user is not blocked
       setOtpValues(["", "", "", "", "", ""]);
       setSmsSentNotice(
         lang === "hi"
-          ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर ओटीपी अनुरोध भेज दिया गया है। कृपया प्राप्त 6-अंकीय कोड दर्ज करें।`
-          : `📩 Verification code dispatched to +91 ${cleanPhone} via SMS. Please enter the 6-digit code received on your phone.`
+          ? `ℹ️ डेमो मोड: परीक्षण हेतु ⚡ टेस्ट कोड (123456) दर्ज करें।`
+          : `ℹ️ Demo Mode: Please use test code 123456 to test citizen access.`
       );
       setStep("otp");
       setResendTimer(30);
@@ -635,11 +630,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     />
                   ))}
                 </div>
-                <p className="text-[11px] text-gray-500 text-center">
-                  {lang === "hi"
-                    ? "संदेश प्राप्त नहीं हुआ? पुनः भेजने हेतु नीचे प्रतीक्षा करें या 123456 (बैकअप कोड) का उपयोग करें।"
-                    : "Didn't receive SMS? Wait below to resend, or use 123456 as backup test code."}
-                </p>
+                <div className="flex flex-col items-center gap-1.5 pt-1">
+                  {!confirmationResult && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpValues(["1", "2", "3", "4", "5", "6"]);
+                        if (errorMsg) setErrorMsg("");
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#1E7E34] text-xs font-extrabold border border-emerald-300 transition-all duration-200 shadow-xs hover:shadow-md inline-flex items-center space-x-1.5 transform active:scale-95"
+                    >
+                      <span>⚡ {lang === "hi" ? "टेस्ट कोड भरें (123456)" : "Auto-Fill Demo Code (123456)"}</span>
+                    </button>
+                  )}
+                  <p className="text-[11px] text-gray-500 text-center">
+                    {lang === "hi"
+                      ? "संदेश प्राप्त नहीं हुआ? पुनः भेजने हेतु नीचे प्रतीक्षा करें या 123456 (बैकअप कोड) का उपयोग करें।"
+                      : "Didn't receive SMS? Wait below to resend, or use 123456 as backup test code."}
+                  </p>
+                </div>
               </div>
 
               <button

@@ -366,6 +366,21 @@ export const PhoneOtpSignUpPanel: React.FC<PhoneOtpSignUpPanelProps> = ({
                   />
                 ))}
               </div>
+
+              {!confirmationResult && (
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpValues(["1", "2", "3", "4", "5", "6"]);
+                      if (errorMsg) setErrorMsg("");
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#1E7E34] text-xs font-bold border border-emerald-300 transition shadow-xs inline-flex items-center space-x-1.5"
+                  >
+                    <span>⚡ Auto-Fill Demo Code (123456)</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Verify & Sign Up Primary Button */}
