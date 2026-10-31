@@ -114,6 +114,50 @@ India has a vast array of welfare, scholarship, and agricultural schemes designe
 
 ---
 
+Data collection Websites
+
+**Government Welfare & Central Services**
+
+* **DBT Bharat (`dbtbharat.gov.in`):** Contains master lists and operational guidelines for all Direct Benefit Transfer schemes across ministries.
+* **UMANG (`umang.gov.in`):** Centralizes hundreds of central and state-level services; useful for extracting eligibility criteria for state-specific welfare.
+* **State e-District Portals (e.g., Uttarakhand Apuni Sarkar):** Essential for localized state-level schemes, pensions, and regional financial aid.
+
+**Agriculture & Rural Development**
+
+* **Kisan Suvidha (`kisansuvidha.gov.in`):** Consolidates farmer-centric schemes, including PMFBY (crop insurance), PM-KISAN, and agricultural machinery subsidies.
+* **Dept of Agriculture & Farmers Welfare (`agricoop.gov.in`):** The primary source for downloading detailed, official PDF scheme guidelines, budget allocations, and policy circulars for RAG ingestion.
+
+**Education & Scholarships**
+
+* **National Scholarship Portal (`scholarships.gov.in`):** The definitive federal database for central, state, AICTE, and UGC scholarship eligibility documents and deadlines.
+
+**Non-Government (Private CSR & NGOs)**
+
+* **Buddy4Study (`buddy4study.com`):** India’s largest aggregator for private, corporate, and NGO-funded scholarships (e.g., L'Oréal, HDFC, Keep India Smiling).
+* **Vidyasaarathi (`vidyasaarathi.co.in`):** An NSDL e-Gov portal featuring education finance and CSR-backed private schemes for students.
+* **Major Corporate Foundations:** Direct websites for Tata Trusts, Reliance Foundation, and HDFC Parivartan for extracting private vocational grants, women's empowerment initiatives, and rural livelihood programs.
+ tell me website name and link in short Data collection Websites
+
+**Government Welfare & Central Services**
+
+* **DBT Bharat (`dbtbharat.gov.in`):** Contains master lists and operational guidelines for all Direct Benefit Transfer schemes across ministries.
+* **UMANG (`umang.gov.in`):** Centralizes hundreds of central and state-level services; useful for extracting eligibility criteria for state-specific welfare.
+* **State e-District Portals (e.g., Uttarakhand Apuni Sarkar):** Essential for localized state-level schemes, pensions, and regional financial aid.
+
+**Agriculture & Rural Development**
+
+* **Kisan Suvidha (`kisansuvidha.gov.in`):** Consolidates farmer-centric schemes, including PMFBY (crop insurance), PM-KISAN, and agricultural machinery subsidies.
+* **Dept of Agriculture & Farmers Welfare (`agricoop.gov.in`):** The primary source for downloading detailed, official PDF scheme guidelines, budget allocations, and policy circulars for RAG ingestion.
+
+**Education & Scholarships**
+
+* **National Scholarship Portal (`scholarships.gov.in`):** The definitive federal database for central, state, AICTE, and UGC scholarship eligibility documents and deadlines.
+
+**Non-Government (Private CSR & NGOs)**
+
+* **Buddy4Study (`buddy4study.com`):** India’s largest aggregator for private, corporate, and NGO-funded scholarships (e.g., L'Oréal, HDFC, Keep India Smiling).
+* **Vidyasaarathi (`vidyasaarathi.co.in`):** An NSDL e-Gov portal featuring education finance and CSR-backed private schemes for students.
+* **Major Corporate Foundations:** Direct websites for Tata Trusts, Reliance Foundation, and HDFC Parivartan for extracting private vocational grants, women's empowerment initiatives, and rural livelihood programs.
 ## 📋 Minimum Working Version (MVV) Scope
 
 1. **Document Collection:** 10 to 20 foundational public scheme documents (PM-KISAN, Ayushman Bharat, major scholarships).
