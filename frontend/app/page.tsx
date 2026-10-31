@@ -282,7 +282,7 @@ export default function Home() {
         }}
       />
 
-      {/* CITIZEN AUTHENTICATION MODAL WITH SMS OTP VERIFICATION */}
+      {/* CITIZEN AUTHENTICATION MODAL WITH GMAIL OTP VERIFICATION */}
       <AuthModal
         isOpen={isAuthModalOpen}
         initialMode={authMode}
