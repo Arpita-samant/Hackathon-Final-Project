@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronDown
 } from "lucide-react";
+import { HighContrastToggle } from "@/components/HighContrastToggle";
 
 interface NavbarProps {
   currentTab: string;
@@ -121,8 +122,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Controls: Multilingual Indian Language Switcher (No globe icon, clean dropdown icon), Login, Sign Up */}
+          {/* Right Controls: High Contrast, Multilingual Indian Language Switcher, Login, Sign Up */}
           <div className="hidden sm:flex items-center space-x-2">
+            {/* High Contrast Accessibility Toggle */}
+            <div title="Toggle High Contrast Mode (WCAG AAA)">
+              <HighContrastToggle showLabel={false} />
+            </div>
+
             {/* Language Selector Dropdown - Global icon removed, Dropdown chevron icon used */}
             <div className="relative">
               <button
@@ -242,6 +248,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
 
           <div className="pt-3 border-t border-gray-100 space-y-2">
+            {/* High Contrast Accessibility Option */}
+            <div className="flex items-center justify-between py-1.5 px-1">
+              <span className="text-xs font-bold text-gray-700">High Contrast / उच्च कंट्रास्ट</span>
+              <HighContrastToggle showLabel={false} />
+            </div>
+
             {/* Mobile Language Switcher */}
             <div className="grid grid-cols-3 gap-1 py-1">
               {INDIAN_LANGUAGES.map((langItem) => (
