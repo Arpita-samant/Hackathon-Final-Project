@@ -120,6 +120,7 @@ export default function Home() {
     setCurrentUser(userData);
     localStorage.setItem("yojana_user_profile", JSON.stringify(userData));
     localStorage.setItem("yojana_auth_token", token);
+    setCurrentTab("profile");
   };
 
   const handleLogout = () => {
@@ -127,6 +128,9 @@ export default function Home() {
     localStorage.removeItem("yojana_user_id");
     localStorage.removeItem("yojana_user_profile");
     setCurrentUser(null);
+    if (currentTab === "profile") {
+      setCurrentTab("home");
+    }
   };
 
   return (

@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: "chat", label: t.navChat },
     { id: "voice", label: t.navVoice },
     { id: "family", label: t.navFamily },
-    { id: "profile", label: t.navProfile },
+    ...(isLoggedIn ? [{ id: "profile", label: t.navProfile }] : []),
   ];
 
   const handleSelectTab = (tabId: string) => {
@@ -232,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => handleSelectTab(item.id)}
                 className={`w-full text-left px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition ${
                   isActive
-                    ? "bg-red-50 text-red-600"
+                    ? "bg-blue-50 text-[#104E8B]"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -249,7 +249,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={langItem.code}
                   onClick={() => onLangChange(langItem.code)}
                   className={`text-center py-1.5 px-2 rounded-lg text-[11px] font-bold ${
-                    lang === langItem.code ? "bg-red-600 text-white" : "bg-gray-100 text-gray-800"
+                    lang === langItem.code ? "bg-[#104E8B] text-white" : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   {langItem.native}
@@ -260,7 +260,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Auth Buttons */}
             {isLoggedIn ? (
               <div className="flex items-center justify-between pt-2">
-                <span className="text-xs font-bold text-gray-700">{userName} ({userOccupation})</span>
+                <span className="text-xs font-bold text-[#104E8B]">{userName} ({userOccupation})</span>
                 <button
                   onClick={onLogout}
                   className="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-bold"
@@ -284,7 +284,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setMobileMenuOpen(false);
                     onOpenSignup?.();
                   }}
-                  className="w-full py-2 rounded-xl bg-[#DC2626] text-white text-xs font-bold"
+                  className="w-full py-2 rounded-xl bg-[#1E7E34] hover:bg-[#2BB656] text-white text-xs font-bold shadow-md shadow-green-900/15"
                 >
                   {t.navSignup}
                 </button>
