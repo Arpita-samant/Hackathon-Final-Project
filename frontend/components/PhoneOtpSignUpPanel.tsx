@@ -98,7 +98,9 @@ export const PhoneOtpSignUpPanel: React.FC<PhoneOtpSignUpPanelProps> = ({
         } catch (firebaseErr: any) {
           console.warn("Firebase Phone Auth error, falling back to simulated delay:", firebaseErr);
           const fbErrMsg = `${firebaseErr?.code || ""} ${firebaseErr?.message || ""}`.toLowerCase();
-          if (fbErrMsg.includes("region") || fbErrMsg.includes("operation-not-allowed")) {
+          if (fbErrMsg.includes("billing-not-enabled") || fbErrMsg.includes("billing")) {
+            setErrorMsg("Google Firebase Billing Required: Google requires a billing account (Blaze plan) to dispatch cellular SMS. To test 100% free without adding billing, add your phone number to 'Phone numbers for testing' in Firebase Console, OR use Demo Code (123456) below.");
+          } else if (fbErrMsg.includes("region") || fbErrMsg.includes("operation-not-allowed")) {
             setErrorMsg("Firebase SMS Region Policy: Google blocks SMS to India (+91) by default on new projects. Go to Firebase Console -> Authentication -> Settings tab -> 'SMS region policy' and allow India (+91), or add your number under 'Phone numbers for testing'.");
           } else if (fbErrMsg.includes("unauthorized-domain")) {
             setErrorMsg("Firebase Domain Notice: Add website domain to Firebase Console -> Authentication -> Authorized domains. (Use Demo Code below)");

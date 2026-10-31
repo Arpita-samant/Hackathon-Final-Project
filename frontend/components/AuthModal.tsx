@@ -139,7 +139,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const fbErrMsg = `${firebaseErr?.code || ""} ${firebaseErr?.message || ""}`.toLowerCase();
         
         let friendlyReason = "";
-        if (fbErrMsg.includes("region") || fbErrMsg.includes("operation-not-allowed") || fbErrMsg.includes("operation_not_allowed")) {
+        if (fbErrMsg.includes("billing-not-enabled") || fbErrMsg.includes("billing")) {
+          friendlyReason = lang === "hi"
+            ? "Google Firebase बिलिंग सीमा: Google वास्तविक फ़ोन पर SMS भेजने के लिए बिलिंग खाता (Blaze Plan) मांगता है। मुफ़्त में परीक्षण करने के लिए: Firebase Console -> Phone -> 'Phone numbers for testing' में अपना नंबर जोड़ें, अथवा नीचे दिए गए ⚡ डेमो टेस्ट कोड (123456) का उपयोग करें।"
+            : "Google Firebase Billing Required: Google requires a linked billing account (Blaze plan) to dispatch real cellular SMS. To test 100% free without adding billing, add your phone number to 'Phone numbers for testing' in Firebase Console, OR use the ⚡ Demo Test Code (123456) below.";
+        } else if (fbErrMsg.includes("region") || fbErrMsg.includes("operation-not-allowed") || fbErrMsg.includes("operation_not_allowed")) {
           friendlyReason = lang === "hi"
             ? "Firebase SMS Region Policy: Google नए प्रोजेक्ट्स में डिफ़ॉल्ट रूप से भारत (+91) पर SMS ब्लॉक रखता है। कृपया Firebase Console -> Authentication -> Settings -> 'SMS region policy' में भारत (+91) चालू करें, अथवा 'Phone numbers for testing' में अपना नंबर जोड़ें।"
             : "Firebase SMS Region Policy: Google blocks SMS to India (+91) by default on new projects. Go to Firebase Console -> Authentication -> Settings tab -> 'SMS region policy' and allow India (+91), OR add your number under 'Phone numbers for testing'.";
