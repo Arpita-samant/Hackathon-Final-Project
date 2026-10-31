@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   X, 
   Phone, 
@@ -12,11 +12,13 @@ import {
   ShoppingBag, 
   Home, 
   ShieldCheck, 
-  CheckCircle2, 
+  CheckCircle2,
+  RotateCw, 
   MessageSquare,
   KeyRound,
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   LogIn,
   UserPlus
 } from "lucide-react";
@@ -53,12 +55,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("Farmer");
-  const [otp, setOtp] = useState("");
+  const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
   
   // Status & Feedback
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [smsSentNotice, setSmsSentNotice] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState<number>(30);
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
+
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // 30-Second Countdown Timer for Resend OTP
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isTimerActive && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      setIsTimerActive(false);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerActive, resendTimer]);
 
   // Synchronize mode immediately when initialMode prop changes or modal opens
   useEffect(() => {
@@ -67,7 +88,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setStep("details");
       setErrorMsg("");
       setSmsSentNotice(null);
-      setOtp("");
+      setOtpValues(["", "", "", "", "", ""]);
+      setResendTimer(30);
+      setIsTimerActive(false);
     }
   }, [initialMode, isOpen]);
 
@@ -98,25 +121,69 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       // Clear any prefilled OTP - user enters the real code sent to their phone SMS!
-      setOtp("");
+      setOtpValues(["", "", "", "", "", ""]);
       setSmsSentNotice(
         lang === "hi"
-          ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर एसएमएस द्वारा 6-अंकीय ओटीपी भेज दिया गया है। कृपया अपने इनबॉक्स में संदेश देखें और नीचे कोड दर्ज करें।`
-          : `📩 A 6-digit verification code has been dispatched to +91 ${cleanPhone} via SMS. Please check your phone's Messages app and enter the code below.`
+          ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर एसएमएस द्वारा 6-अंकीय ओटीपी भेज दिया गया है। कृपया संदेश देखें और नीचे 6 अंकों का कोड दर्ज करें।`
+          : `📩 A 6-digit verification code has been dispatched to +91 ${cleanPhone} via SMS. Please check your messages and enter the code below.`
       );
       setStep("otp");
+      setResendTimer(30);
+      setIsTimerActive(true);
+
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
     } catch (err: any) {
       // In case of backend connection issue, still transition to OTP step so user is not blocked
-      setOtp("");
+      setOtpValues(["", "", "", "", "", ""]);
       setSmsSentNotice(
         lang === "hi"
           ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर ओटीपी अनुरोध भेज दिया गया है। कृपया प्राप्त 6-अंकीय कोड दर्ज करें।`
           : `📩 Verification code dispatched to +91 ${cleanPhone} via SMS. Please enter the 6-digit code received on your phone.`
       );
       setStep("otp");
+      setResendTimer(30);
+      setIsTimerActive(true);
+
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOtpBoxChange = (index: number, value: string) => {
+    if (errorMsg) setErrorMsg("");
+    const cleanDigit = value.replace(/\D/g, "").slice(-1);
+    const updated = [...otpValues];
+    updated[index] = cleanDigit;
+    setOtpValues(updated);
+
+    if (cleanDigit && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text/plain").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+
+    const updated = [...otpValues];
+    for (let i = 0; i < 6; i++) {
+      updated[i] = pasted[i] || "";
+    }
+    setOtpValues(updated);
+    const nextIdx = Math.min(pasted.length, 5);
+    otpInputRefs.current[nextIdx]?.focus();
   };
 
   const handleVerifyOtpAndSubmit = async (e: React.FormEvent) => {
@@ -124,13 +191,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg("");
 
     const cleanPhone = phone.trim().replace("+91", "").replace(/\s/g, "");
-    const cleanOtp = otp.trim();
+    const cleanOtp = otpValues.join("").trim();
 
     if (!cleanOtp || cleanOtp.length !== 6) {
       setErrorMsg(
         lang === "hi"
           ? "कृपया अपने मोबाइल पर प्राप्त 6-अंकीय सत्यापन कोड दर्ज करें।"
-          : "Please enter the 6-digit verification code sent to your phone."
+          : "Please enter all 6 digits of the verification code."
       );
       return;
     }
@@ -483,30 +550,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => {
-                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
-                    if (errorMsg) setErrorMsg("");
-                  }}
-                  placeholder="------"
-                  className="w-full text-center tracking-[0.3em] text-2xl font-black py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none font-mono placeholder:text-gray-300"
-                />
+              <div className="space-y-2">
+                {/* 6 Individual Character Boxes with auto-focus & paste */}
+                <div className="flex items-center justify-between gap-2 sm:gap-2.5" onPaste={handleOtpPaste}>
+                  {otpValues.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={(el) => {
+                        otpInputRefs.current[idx] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpBoxChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      disabled={loading}
+                      className={`w-11 sm:w-12 h-13 sm:h-14 text-center text-xl font-black font-mono rounded-2xl border transition-all duration-200 ${
+                        errorMsg
+                          ? "border-rose-400 bg-rose-50/30 text-rose-900 focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                          : digit
+                          ? "border-[#104E8B] bg-blue-50/20 text-[#104E8B] focus:ring-2 focus:ring-[#104E8B] focus:border-transparent"
+                          : "border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent"
+                      } focus:outline-none disabled:bg-gray-100 disabled:text-gray-400`}
+                    />
+                  ))}
+                </div>
                 <p className="text-[11px] text-gray-500 text-center">
                   {lang === "hi"
-                    ? "संदेश प्राप्त नहीं हुआ? पुनः भेजने के लिए नीचे क्लिक करें या 123456 (बैकअप कोड) का उपयोग करें।"
-                    : "Didn't receive SMS? Click below to resend, or enter 123456 as backup test code."}
+                    ? "संदेश प्राप्त नहीं हुआ? पुनः भेजने हेतु नीचे प्रतीक्षा करें या 123456 (बैकअप कोड) का उपयोग करें।"
+                    : "Didn't receive SMS? Wait below to resend, or use 123456 as backup test code."}
                 </p>
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-[#1E7E34] hover:bg-[#2BB656] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 transform active:scale-95 hover:-translate-y-0.5"
+                disabled={loading || otpValues.join("").length !== 6}
+                className="w-full py-3.5 rounded-xl bg-[#1E7E34] hover:bg-[#2BB656] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 transform active:scale-95 hover:-translate-y-0.5 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span>{lang === "hi" ? "सत्यापन जारी है..." : "Verifying & Authenticating..."}</span>
@@ -522,17 +602,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setStep("details")}
-                  className="text-gray-500 hover:text-gray-800 underline"
+                  className="text-gray-500 hover:text-gray-800 underline flex items-center space-x-1"
                 >
-                  {lang === "hi" ? "नंबर बदलें" : "Change Mobile Number"}
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>{lang === "hi" ? "नंबर बदलें" : "Change Mobile Number"}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  className="text-[#104E8B] hover:text-[#1E7E34] font-bold"
-                >
-                  {lang === "hi" ? "ओटीपी पुनः भेजें" : "Resend OTP"}
-                </button>
+
+                {isTimerActive ? (
+                  <span className="text-gray-400 font-medium">
+                    {lang === "hi" ? `पुनः भेजें (${resendTimer}s)` : `Resend in ${resendTimer}s`}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    className="text-[#104E8B] hover:text-[#1E7E34] font-bold inline-flex items-center space-x-1"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    <span>{lang === "hi" ? "ओटीपी पुनः भेजें" : "Resend OTP"}</span>
+                  </button>
+                )}
               </div>
             </form>
           )}
