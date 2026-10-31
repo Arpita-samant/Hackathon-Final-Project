@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Language, translations } from "@/lib/translations";
 import { 
   Users, 
@@ -17,7 +17,11 @@ import {
   ArrowLeft,
   X,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  LogIn,
+  UserPlus,
+  ShieldCheck
 } from "lucide-react";
 
 export interface FamilyMember {
@@ -41,69 +45,77 @@ interface FamilyMembersPageProps {
   lang: Language;
   onExploreSchemes?: () => void;
   currentUser?: any;
+  onOpenLogin?: () => void;
+  onOpenSignup?: () => void;
 }
 
 export const FamilyMembersPage: React.FC<FamilyMembersPageProps> = ({ 
   lang,
   onExploreSchemes,
-  currentUser
+  currentUser,
+  onOpenLogin,
+  onOpenSignup
 }) => {
   const t = translations[lang] || translations.en;
 
-  const [members, setMembers] = useState<FamilyMember[]>([
-    {
-      id: "mem_1",
-      name: currentUser?.name || "Rahul Sharma",
-      relation: "Self / Father",
-      age: currentUser?.occupation_category === "Student" ? 22 : 35,
-      gender: "Male",
-      annual_income: currentUser?.annual_income || 180000,
-      occupation: currentUser?.occupation_category || "Farmer",
-      caste_category: currentUser?.caste_category || "OBC",
-      state: currentUser?.state || "Uttarakhand",
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+
+  // Sync and isolate family data strictly for authenticated currentUser
+  useEffect(() => {
+    if (!currentUser) {
+      setMembers([]);
+      setSelectedMemberId("");
+      return;
+    }
+
+    const storageKey = `yojana_family_members_${currentUser.id || "citizen"}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembers(parsed);
+          setSelectedMemberId(parsed[0].id);
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to load saved family members", e);
+      }
+    }
+
+    // Default to only 1 member: the authenticated citizen themselves
+    const primaryMember: FamilyMember = {
+      id: `mem_${currentUser.id || Date.now()}_self`,
+      name: currentUser.name || "Primary Account Holder",
+      relation: "Self (Head)",
+      age: currentUser.age || (currentUser.occupation_category === "Student" ? 21 : 35),
+      gender: currentUser.gender || "Male",
+      annual_income: currentUser.annual_income || 180000,
+      occupation: currentUser.occupation_category || "Farmer",
+      caste_category: currentUser.caste_category || "General",
+      state: currentUser.state || "Uttarakhand",
       isAccountHolder: true,
       avatarColor: "bg-blue-100 text-blue-700 border-blue-300",
-      eligibleSchemes: currentUser?.occupation_category === "Student"
+      eligibleSchemes: currentUser.occupation_category === "Student"
         ? ["National Scholarship Portal", "PM e-VIDYA", "Skill India Mission"]
-        : ["PM-KISAN", "Kisan Credit Card", "PMAY-Gramin"],
-      nearMissSchemes: ["Scholarship Scheme (Age: 17+)", "Skill India Mission (Age: 35+)"],
-      potentialBenefit: currentUser?.occupation_category === "Student" ? 25000 : 6000,
-    },
-    {
-      id: "mem_2",
-      name: "Priya Sharma",
-      relation: "Spouse",
-      age: 32,
-      gender: "Female",
-      annual_income: 0,
-      occupation: "Homemaker",
-      caste_category: "OBC",
-      state: "Uttarakhand",
-      isAccountHolder: false,
-      avatarColor: "bg-rose-100 text-rose-700 border-rose-300",
-      eligibleSchemes: ["Ujjwala Yojana 2.0 (PMUY)", "Ayushman Bharat PM-JAY", "Janani Suraksha Yojana"],
-      nearMissSchemes: ["Sukanya Samriddhi Yojana (Max Age: 10)"],
-      potentialBenefit: 501600,
-    },
-    {
-      id: "mem_3",
-      name: "Ananya Sharma",
-      relation: "Daughter",
-      age: 17,
-      gender: "Female",
-      annual_income: 0,
-      occupation: "Student",
-      caste_category: "OBC",
-      state: "Uttarakhand",
-      isAccountHolder: false,
-      avatarColor: "bg-purple-100 text-purple-700 border-purple-300",
-      eligibleSchemes: ["National Scholarship Portal", "PM e-VIDYA"],
-      nearMissSchemes: ["PM Mudra Loan (Min Age: 18)"],
-      potentialBenefit: 25000,
-    },
-  ]);
+        : ["PM-KISAN", "Kisan Credit Card", "Ayushman Bharat PM-JAY"],
+      nearMissSchemes: ["PMAY-Gramin (Housing Assistance)"],
+      potentialBenefit: currentUser.occupation_category === "Student" ? 25000 : 12000,
+    };
 
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("mem_1");
+    setMembers([primaryMember]);
+    setSelectedMemberId(primaryMember.id);
+    localStorage.setItem(storageKey, JSON.stringify([primaryMember]));
+  }, [currentUser]);
+
+  const saveMembersList = (updated: FamilyMember[]) => {
+    setMembers(updated);
+    if (currentUser) {
+      const storageKey = `yojana_family_members_${currentUser.id || "citizen"}`;
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    }
+  };
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
 
@@ -118,6 +130,77 @@ export const FamilyMembersPage: React.FC<FamilyMembersPageProps> = ({
     caste_category: "OBC",
     state: "Uttarakhand",
   });
+
+  if (!currentUser) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
+        <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xl overflow-hidden p-8 sm:p-12 text-center space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#104E8B] shadow-sm">
+            <Users className="w-10 h-10 text-[#104E8B]" />
+          </div>
+          
+          <div className="space-y-2 max-w-lg mx-auto">
+            <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>{lang === "hi" ? "नागरिक खाता अनिवार्य है" : "Citizen Account Required"}</span>
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              {lang === "hi" ? "पारिवारिक विवरण एवं कल्याणकारी लाभ" : "Family Members & Household Welfare Benefits"}
+            </h2>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {lang === "hi"
+                ? "नागरिक गोपनीयता सुरक्षा के लिए, परिवार के सदस्यों का विवरण, आयु, संबंध और प्रत्यक्ष लाभ केवल आपके व्यक्तिगत नागरिक खाते में लॉग इन करने के बाद ही दिखाई देते हैं।"
+                : "To protect citizen privacy, family member records, relationship structures, and personalized welfare benefits are private. Please log in or create an account to view and manage your family."}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            {onOpenLogin && (
+              <button
+                type="button"
+                onClick={onOpenLogin}
+                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-[#104E8B] hover:bg-[#0A2540] text-white font-bold text-sm shadow-md hover:shadow-lg transform active:scale-95 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{lang === "hi" ? "लॉगिन करें (Log In)" : "Log In to View Family"}</span>
+              </button>
+            )}
+
+            {onOpenSignup && (
+              <button
+                type="button"
+                onClick={onOpenSignup}
+                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-[#1E7E34] hover:bg-[#2BB656] text-white font-bold text-sm shadow-md hover:shadow-lg transform active:scale-95 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>{lang === "hi" ? "नया नागरिक खाता बनाएं (Sign Up)" : "Create New Account"}</span>
+              </button>
+            )}
+          </div>
+
+          {/* Security & Feature Badges */}
+          <div className="pt-8 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+              <ShieldCheck className="w-5 h-5 text-[#1E7E34] mb-2" />
+              <h4 className="text-xs font-bold text-gray-900">{lang === "hi" ? "पूर्ण डेटा गोपनीयता" : "Private & Isolated"}</h4>
+              <p className="text-[11px] text-gray-500 mt-0.5">{lang === "hi" ? "परिवार का डेटा केवल आपके खाते में सुरक्षित रहता है।" : "Family member records are strictly isolated to your verified account."}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+              <Trophy className="w-5 h-5 text-[#104E8B] mb-2" />
+              <h4 className="text-xs font-bold text-gray-900">{lang === "hi" ? "समग्र पात्रता गणना" : "Household Scheme Matching"}</h4>
+              <p className="text-[11px] text-gray-500 mt-0.5">{lang === "hi" ? "प्रत्येक सदस्य की आयु व आय अनुसार योजनाओं की जांच।" : "Matches schemes across spouse, children, and elders automatically."}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+              <CheckCircle2 className="w-5 h-5 text-[#2BB656] mb-2" />
+              <h4 className="text-xs font-bold text-gray-900">{lang === "hi" ? "डीबीटी प्रत्यक्ष लाभ" : "Direct Benefit Transfer"}</h4>
+              <p className="text-[11px] text-gray-500 mt-0.5">{lang === "hi" ? "बैंक खाते व आधार से जुड़े सरकारी लाभों की गणना।" : "Tracks eligible government subsidies credited per family member."}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const selectedMember = members.find((m) => m.id === selectedMemberId) || members[0];
 
@@ -159,8 +242,8 @@ export const FamilyMembersPage: React.FC<FamilyMembersPageProps> = ({
       return;
     }
     const filtered = members.filter((m) => m.id !== memberId);
-    setMembers(filtered);
-    if (selectedMemberId === memberId) {
+    saveMembersList(filtered);
+    if (selectedMemberId === memberId && filtered.length > 0) {
       setSelectedMemberId(filtered[0].id);
     }
   };
@@ -171,23 +254,22 @@ export const FamilyMembersPage: React.FC<FamilyMembersPageProps> = ({
 
     if (editingMember) {
       // Update
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === editingMember.id
-            ? {
-                ...m,
-                name: formData.name,
-                relation: formData.relation,
-                age: Number(formData.age),
-                gender: formData.gender,
-                occupation: formData.occupation,
-                annual_income: Number(formData.annual_income),
-                caste_category: formData.caste_category,
-                state: formData.state,
-              }
-            : m
-        )
+      const updated = members.map((m) =>
+        m.id === editingMember.id
+          ? {
+              ...m,
+              name: formData.name,
+              relation: formData.relation,
+              age: Number(formData.age),
+              gender: formData.gender,
+              occupation: formData.occupation,
+              annual_income: Number(formData.annual_income),
+              caste_category: formData.caste_category,
+              state: formData.state,
+            }
+          : m
       );
+      saveMembersList(updated);
     } else {
       // Create
       const newId = `mem_${Date.now()}`;
@@ -207,7 +289,8 @@ export const FamilyMembersPage: React.FC<FamilyMembersPageProps> = ({
         nearMissSchemes: ["PM Kisan (Landholding Required)"],
         potentialBenefit: 500000,
       };
-      setMembers((prev) => [...prev, newMember]);
+      const updated = [...members, newMember];
+      saveMembersList(updated);
       setSelectedMemberId(newId);
     }
     setIsAddModalOpen(false);

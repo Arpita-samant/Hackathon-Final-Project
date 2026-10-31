@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   X, 
   Phone, 
@@ -15,7 +15,10 @@ import {
   CheckCircle2, 
   MessageSquare,
   KeyRound,
-  AlertCircle
+  AlertCircle,
+  ArrowRight,
+  LogIn,
+  UserPlus
 } from "lucide-react";
 import { Language, translations } from "@/lib/translations";
 
@@ -50,14 +53,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("Farmer");
-  const [stateName, setStateName] = useState("Uttar Pradesh");
-  const [annualIncome, setAnnualIncome] = useState("180000");
   const [otp, setOtp] = useState("");
   
   // Status & Feedback
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [smsSimulationBanner, setSmsSimulationBanner] = useState<string | null>(null);
+
+  // Synchronize mode immediately when initialMode prop changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setStep("details");
+      setErrorMsg("");
+      setSmsSimulationBanner(null);
+      setOtp("");
+    }
+  }, [initialMode, isOpen]);
 
   if (!isOpen) return null;
 
@@ -85,7 +97,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         throw new Error(data.detail || "Failed to send SMS OTP.");
       }
 
-      setSmsSimulationBanner(`📩 SMS Gateway: "Your Yojana Sahayak verification code is ${data.demo_otp}. Valid for 10 minutes."`);
+      setSmsSimulationBanner(
+        `📩 SMS Gateway: "Your Yojana Sahayak verification code is ${data.demo_otp}. Valid for 10 minutes."`
+      );
       setOtp(data.demo_otp || "123456");
       setStep("otp");
     } catch (err: any) {
@@ -103,24 +117,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const cleanPhone = phone.trim().replace("+91", "").replace(/\s/g, "");
 
     try {
-      const endpoint = mode === "signup" ? "/api/auth/verify-and-register" : "/api/auth/login";
-      const bodyPayload = mode === "signup" ? {
+      let endpoint = "/api/auth/verify-and-register";
+      let payload: any = {
         phone: cleanPhone,
-        otp: otp.trim(),
+        otp_code: otp.trim(),
         name: name.trim() || "Citizen User",
         occupation_category: occupation,
-        state: stateName,
+        state: "All-India",
         caste_category: "General",
-        annual_income: parseFloat(annualIncome) || 0,
-      } : {
-        phone: cleanPhone,
-        otp: otp.trim(),
+        annual_income: 180000.0,
       };
+
+      if (mode === "login") {
+        endpoint = "/api/auth/login";
+        payload = {
+          phone: cleanPhone,
+          otp_code: otp.trim(),
+        };
+      }
 
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bodyPayload),
+        body: JSON.stringify(payload),
       });
 
       const userData = await res.json();
@@ -148,11 +167,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-lg w-full overflow-hidden relative my-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header */}
+        {/* Top Header with Brand Theme */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/70">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-4 h-4" />
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white shadow-xs ${
+              mode === "signup" ? "bg-[#1E7E34]" : "bg-[#104E8B]"
+            }`}>
+              {mode === "signup" ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
             </div>
             <div>
               <h3 className="font-extrabold text-base text-gray-900 leading-tight">
@@ -163,13 +184,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <p className="text-[11px] text-gray-500">
                 {mode === "signup"
                   ? (lang === "hi" ? "एसएमएस सत्यापन द्वारा सुरक्षित खाता निर्माण" : "Mobile SMS OTP Verified Registration")
-                  : (lang === "hi" ? "अपने पंजीकृत मोबाइल नंबर से लॉगिन करें" : "Access your saved welfare schemes & profile")}
+                  : (lang === "hi" ? "अपने पंजीकृत मोबाइल नंबर से लॉगिन करें" : "Access your saved welfare schemes & family data")}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 flex items-center justify-center transition"
+            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 flex items-center justify-center transition hover:scale-110 active:scale-95"
+            aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
           </button>
@@ -177,21 +199,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Tab Switcher: Sign Up vs Login */}
         <div className="px-6 pt-4">
-          <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-2xl">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signup");
-                setStep("details");
-                setErrorMsg("");
-                setSmsSimulationBanner(null);
-              }}
-              className={`py-2 text-xs font-bold rounded-xl transition ${
-                mode === "signup" ? "bg-white text-red-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {lang === "hi" ? "नया खाता (Sign Up)" : "Sign Up"}
-            </button>
+          <div className="grid grid-cols-2 p-1.5 bg-gray-100 rounded-2xl">
             <button
               type="button"
               onClick={() => {
@@ -200,11 +208,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setErrorMsg("");
                 setSmsSimulationBanner(null);
               }}
-              className={`py-2 text-xs font-bold rounded-xl transition ${
-                mode === "login" ? "bg-white text-red-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              className={`py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center space-x-1.5 ${
+                mode === "login" 
+                  ? "bg-[#104E8B] text-white shadow-md transform scale-[1.02]" 
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              {lang === "hi" ? "लॉगिन (Login)" : "Login"}
+              <LogIn className="w-3.5 h-3.5" />
+              <span>{lang === "hi" ? "लॉगिन (Login)" : "Login"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signup");
+                setStep("details");
+                setErrorMsg("");
+                setSmsSimulationBanner(null);
+              }}
+              className={`py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center space-x-1.5 ${
+                mode === "signup" 
+                  ? "bg-[#1E7E34] text-white shadow-md transform scale-[1.02]" 
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>{lang === "hi" ? "नया खाता (Sign Up)" : "Sign Up"}</span>
             </button>
           </div>
         </div>
@@ -212,8 +241,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* SMS Simulator Alert Banner */}
         {smsSimulationBanner && (
           <div className="mx-6 mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-start space-x-2 shadow-xs">
-            <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">{smsSimulationBanner}</div>
+            <MessageSquare className="w-4 h-4 text-[#1E7E34] shrink-0 mt-0.5" />
+            <div className="leading-relaxed font-mono">{smsSimulationBanner}</div>
           </div>
         )}
 
@@ -245,13 +274,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             key={role.id}
                             type="button"
                             onClick={() => setOccupation(role.id)}
-                            className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${
+                            className={`p-2.5 rounded-xl border text-left transition-all duration-200 flex flex-col items-start ${
                               isSelected
-                                ? "bg-red-50 border-red-500 ring-2 ring-red-500/20"
+                                ? "bg-blue-50 border-[#104E8B] ring-2 ring-[#104E8B]/20 shadow-xs"
                                 : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                             }`}
                           >
-                            <Icon className={`w-4 h-4 mb-1.5 ${isSelected ? "text-red-600" : "text-gray-500"}`} />
+                            <Icon className={`w-4 h-4 mb-1.5 ${isSelected ? "text-[#104E8B]" : "text-gray-500"}`} />
                             <span className="text-xs font-bold text-gray-900 leading-tight">
                               {lang === "hi" ? role.labelHi : role.label}
                             </span>
@@ -274,17 +303,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder={lang === "hi" ? "उदा. राहुल शर्मा" : "e.g., Rahul Sharma"}
-                        className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                        className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none"
                       />
                     </div>
                   </div>
                 </>
               )}
 
-              {/* Mobile Number */}
+              {/* Mobile Number Input (Common for both Login and Signup) */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  {lang === "hi" ? "10 अंकों का मोबाइल नंबर (एसएमएस हेतु)" : "10-Digit Mobile Number (For SMS Verification)"}
+                  {mode === "login"
+                    ? (lang === "hi" ? "पंजीकृत 10 अंकों का मोबाइल नंबर" : "Registered 10-Digit Mobile Number")
+                    : (lang === "hi" ? "10 अंकों का मोबाइल नंबर (एसएमएस हेतु)" : "10-Digit Mobile Number (For SMS Verification)")}
                 </label>
                 <div className="relative">
                   <div className="absolute left-3 top-2.5 flex items-center space-x-1 text-xs font-bold text-gray-600">
@@ -298,18 +329,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="9876543210"
-                    className="w-full pl-16 pr-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                    className="w-full pl-16 pr-3 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Informative Note: Documents are NOT compulsory at registration */}
+              {/* Reassuring note for signup: Documents are not compulsory right now */}
               {mode === "signup" && (
-                <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-2xl text-[11px] text-blue-900 leading-relaxed">
+                <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-2xl text-[11px] text-[#0A2540] leading-relaxed">
                   💡 <strong>{lang === "hi" ? "दस्तावेज़ अनिवार्य नहीं हैं:" : "Documents are not mandatory right now:"}</strong>{" "}
                   {lang === "hi"
                     ? "आधार कार्ड, पैन कार्ड या अन्य प्रमाण आप खाता बनाने के बाद कभी भी 'मेरी प्रोफ़ाइल' में अपलोड कर सकते हैं।"
-                    : "Aadhaar card, PAN card, or income certificates can be uploaded anytime later from My Profile. It is not compulsory at signup."}
+                    : "Aadhaar card, PAN card, or certificates can be uploaded anytime later from My Profile. It is not required at signup."}
                 </div>
               )}
 
@@ -317,20 +348,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-[#104E8B] hover:bg-[#0A2540] text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-900/15 transition flex items-center justify-center space-x-2"
+                className={`w-full py-3.5 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 transform active:scale-95 hover:-translate-y-0.5 ${
+                  mode === "signup"
+                    ? "bg-[#1E7E34] hover:bg-[#2BB656]"
+                    : "bg-[#104E8B] hover:bg-[#0A2540]"
+                }`}
               >
                 {loading ? (
                   <span>{lang === "hi" ? "एसएमएस भेजा जा रहा है..." : "Sending SMS OTP..."}</span>
                 ) : (
-                  <span>{lang === "hi" ? "एसएमएस ओटीपी प्राप्त करें" : "Send OTP via SMS"}</span>
+                  <>
+                    <span>{mode === "login" 
+                      ? (lang === "hi" ? "लॉगिन ओटीपी प्राप्त करें" : "Send Login OTP via SMS") 
+                      : (lang === "hi" ? "एसएमएस ओटीपी प्राप्त करें" : "Send Registration OTP via SMS")}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
                 )}
               </button>
+
+              {/* Bottom Quick Switcher */}
+              <div className="text-center pt-2 text-xs text-gray-500">
+                {mode === "login" ? (
+                  <span>
+                    {lang === "hi" ? "खाता नहीं है? " : "Don't have an account? "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("signup");
+                        setErrorMsg("");
+                        setSmsSimulationBanner(null);
+                      }}
+                      className="font-bold text-[#1E7E34] hover:underline"
+                    >
+                      {lang === "hi" ? "नया खाता बनाएं (Sign Up)" : "Sign Up"}
+                    </button>
+                  </span>
+                ) : (
+                  <span>
+                    {lang === "hi" ? "पहले से खाता है? " : "Already have an account? "}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("login");
+                        setErrorMsg("");
+                        setSmsSimulationBanner(null);
+                      }}
+                      className="font-bold text-[#104E8B] hover:underline"
+                    >
+                      {lang === "hi" ? "लॉगिन करें (Login)" : "Log In"}
+                    </button>
+                  </span>
+                )}
+              </div>
             </form>
           ) : (
             /* OTP Verification Step */
             <form onSubmit={handleVerifyOtpAndSubmit} className="space-y-4">
               <div className="text-center space-y-1">
-                <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-[#104E8B] mx-auto flex items-center justify-center border border-blue-200">
                   <KeyRound className="w-6 h-6" />
                 </div>
                 <h4 className="text-sm font-extrabold text-gray-900">
@@ -349,14 +424,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="123456"
-                  className="w-full text-center tracking-widest text-xl font-bold py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  className="w-full text-center tracking-widest text-2xl font-black py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none font-mono"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-[#1E7E34] hover:bg-[#2BB656] text-white text-xs sm:text-sm font-bold shadow-md shadow-green-900/15 transition flex items-center justify-center space-x-2"
+                className="w-full py-3.5 rounded-xl bg-[#1E7E34] hover:bg-[#2BB656] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 transform active:scale-95 hover:-translate-y-0.5"
               >
                 {loading ? (
                   <span>{lang === "hi" ? "सत्यापन जारी है..." : "Verifying & Authenticating..."}</span>

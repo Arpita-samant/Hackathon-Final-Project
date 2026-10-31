@@ -24,8 +24,10 @@ interface SchemeDetailModalProps {
   onClose: () => void;
   lang: Language;
   onGoToDashboard: () => void;
+  onOpenLogin?: () => void;
   userProfile?: {
     name: string;
+    isLoggedIn?: boolean;
     familyCount: number;
     landholding: string;
     bankAccountMasked: string;
@@ -38,12 +40,8 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
   onClose,
   lang,
   onGoToDashboard,
-  userProfile = {
-    name: "Amit Kumar Singh",
-    familyCount: 4,
-    landholding: "1.5 Hectare",
-    bankAccountMasked: "XXXX1234",
-  },
+  onOpenLogin,
+  userProfile,
 }) => {
   if (!isOpen || !scheme) return null;
 
@@ -195,58 +193,87 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Your Family Summary Container (Matching Image 3) */}
+              {/* Your Family Summary Container */}
               <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-200">
-                <div className="text-xs font-bold text-gray-900 mb-3 flex items-center space-x-1.5">
-                  <Users className="w-4 h-4 text-gray-600" />
-                  <span>{t.familySummaryTitle}</span>
+                <div className="text-xs font-bold text-gray-900 mb-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Users className="w-4 h-4 text-gray-600" />
+                    <span>{t.familySummaryTitle}</span>
+                  </div>
+                  {!userProfile?.isLoggedIn && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      {lang === "hi" ? "लॉगिन आवश्यक" : "Login Required"}
+                    </span>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  {/* Farmer Name */}
-                  <div className="flex items-start space-x-2.5">
-                    <User className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-gray-500 text-[11px]">{t.labelFarmerName}</div>
-                      <div className="font-bold text-gray-900 text-sm mt-0.5">
-                        {userProfile.name}
+                {userProfile?.isLoggedIn ? (
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    {/* Farmer / Citizen Name */}
+                    <div className="flex items-start space-x-2.5">
+                      <User className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-gray-500 text-[11px]">{t.labelFarmerName}</div>
+                        <div className="font-bold text-gray-900 text-sm mt-0.5">
+                          {userProfile.name}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Family Members */}
-                  <div className="flex items-start space-x-2.5">
-                    <Users className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-gray-500 text-[11px]">{t.labelFamilyMembers}</div>
-                      <div className="font-bold text-gray-900 text-sm mt-0.5">
-                        {userProfile.familyCount} {t.membersUnit}
+                    {/* Family Members */}
+                    <div className="flex items-start space-x-2.5">
+                      <Users className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-gray-500 text-[11px]">{t.labelFamilyMembers}</div>
+                        <div className="font-bold text-gray-900 text-sm mt-0.5">
+                          {userProfile.familyCount} {t.membersUnit}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Land Holding */}
-                  <div className="flex items-start space-x-2.5">
-                    <Sprout className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-gray-500 text-[11px]">{t.labelLandHolding}</div>
-                      <div className="font-bold text-gray-900 text-sm mt-0.5">
-                        {userProfile.landholding}
+                    {/* Land Holding */}
+                    <div className="flex items-start space-x-2.5">
+                      <Sprout className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-gray-500 text-[11px]">{t.labelLandHolding}</div>
+                        <div className="font-bold text-gray-900 text-sm mt-0.5">
+                          {userProfile.landholding}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Bank Account */}
-                  <div className="flex items-start space-x-2.5">
-                    <Landmark className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-gray-500 text-[11px]">{t.labelBankAccount}</div>
-                      <div className="font-bold text-gray-900 text-sm mt-0.5 font-mono">
-                        {userProfile.bankAccountMasked}
+                    {/* Bank Account */}
+                    <div className="flex items-start space-x-2.5">
+                      <Landmark className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-gray-500 text-[11px]">{t.labelBankAccount}</div>
+                        <div className="font-bold text-gray-900 text-sm mt-0.5 font-mono">
+                          {userProfile.bankAccountMasked}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="py-2.5 px-2 text-center space-y-2.5">
+                    <p className="text-xs text-gray-600">
+                      {lang === "hi"
+                        ? "पारिवारिक सदस्यों का विवरण और प्रत्यक्ष लाभ देखने के लिए कृपया लॉगिन करें।"
+                        : "Log in or create a citizen account to view family eligibility & benefit details."}
+                    </p>
+                    {onOpenLogin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenLogin();
+                        }}
+                        className="px-4 py-2 bg-[#104E8B] hover:bg-[#0A2540] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition transform active:scale-95"
+                      >
+                        {lang === "hi" ? "लॉगिन करें (Log In)" : "Log In to View Family"}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -34,11 +34,12 @@ export default function Home() {
 
   // Compatibility profile for detail modal
   const userProfile = {
-    name: currentUser?.name || "Rahul Sharma",
-    familyCount: currentUser?.family_members_count || 4,
+    name: currentUser?.name || "",
+    isLoggedIn: !!currentUser,
+    familyCount: currentUser?.family_members_count || 1,
     landholding: currentUser?.occupation_category === "Farmer" ? "1.5 Hectare" : "0 Acre",
-    bankAccountMasked: "XXXX1234",
-    phone: currentUser?.phone ? `+91 ${currentUser.phone}` : "+91 98765 43210",
+    bankAccountMasked: currentUser ? "XXXX" + (currentUser.phone ? currentUser.phone.slice(-4) : "1234") : "",
+    phone: currentUser?.phone ? `+91 ${currentUser.phone}` : "",
   };
 
   // Eligibility Evaluation State
@@ -217,6 +218,14 @@ export default function Home() {
             lang={lang} 
             onExploreSchemes={() => handleTabChange("schemes")} 
             currentUser={currentUser}
+            onOpenLogin={() => {
+              setAuthMode("login");
+              setIsAuthModalOpen(true);
+            }}
+            onOpenSignup={() => {
+              setAuthMode("signup");
+              setIsAuthModalOpen(true);
+            }}
           />
         )}
 
@@ -255,6 +264,10 @@ export default function Home() {
         lang={lang}
         onGoToDashboard={handleGoToDashboard}
         userProfile={userProfile}
+        onOpenLogin={() => {
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* CITIZEN AUTHENTICATION MODAL WITH SMS OTP VERIFICATION */}
