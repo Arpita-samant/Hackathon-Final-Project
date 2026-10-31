@@ -61,6 +61,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/", tags=["System"])
+def root_status():
+    return {
+        "status": "online",
+        "service": "Yojana Sahayak FastAPI Production Backend",
+        "version": "1.0.0",
+        "docs_url": "/docs",
+        "health_check": "/api/health",
+        "schemes_directory": "/api/schemes",
+        "data_sources": "/api/data-sources"
+    }
+
 @app.get("/api/health", tags=["System"])
 def health_check():
     return {
