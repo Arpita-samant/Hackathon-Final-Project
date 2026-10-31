@@ -97,11 +97,11 @@ export const PhoneOtpSignUpPanel: React.FC<PhoneOtpSignUpPanelProps> = ({
           setConfirmationResult(confirmation);
         } catch (firebaseErr: any) {
           console.warn("Firebase Phone Auth error, falling back to simulated delay:", firebaseErr);
-          const fbErrMsg = firebaseErr?.code || firebaseErr?.message || "";
-          if (fbErrMsg.includes("unauthorized-domain")) {
+          const fbErrMsg = `${firebaseErr?.code || ""} ${firebaseErr?.message || ""}`.toLowerCase();
+          if (fbErrMsg.includes("region") || fbErrMsg.includes("operation-not-allowed")) {
+            setErrorMsg("Firebase SMS Region Policy: Google blocks SMS to India (+91) by default on new projects. Go to Firebase Console -> Authentication -> Settings tab -> 'SMS region policy' and allow India (+91), or add your number under 'Phone numbers for testing'.");
+          } else if (fbErrMsg.includes("unauthorized-domain")) {
             setErrorMsg("Firebase Domain Notice: Add website domain to Firebase Console -> Authentication -> Authorized domains. (Use Demo Code below)");
-          } else if (fbErrMsg.includes("operation-not-allowed")) {
-            setErrorMsg("Firebase Notice: Enable Phone auth in Firebase Console -> Authentication -> Sign-in method. (Use Demo Code below)");
           } else if (fbErrMsg.includes("already been rendered")) {
             setErrorMsg("reCAPTCHA session has been refreshed. Please click 'Get OTP' again.");
           }

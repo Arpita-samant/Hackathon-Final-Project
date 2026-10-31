@@ -93,7 +93,11 @@ export async function sendFirebaseOtp(
   } else {
     targetElement = document.createElement("div");
     targetElement.id = containerId;
-    targetElement.style.display = "none";
+    targetElement.style.position = "fixed";
+    targetElement.style.bottom = "0";
+    targetElement.style.right = "0";
+    targetElement.style.zIndex = "-1";
+    targetElement.style.opacity = "0";
     document.body.appendChild(targetElement);
   }
 

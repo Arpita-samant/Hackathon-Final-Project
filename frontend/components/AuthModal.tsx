@@ -136,10 +136,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         return;
       } catch (firebaseErr: any) {
         console.error("Firebase Phone Auth SMS error:", firebaseErr);
-        const fbErrMsg = firebaseErr?.code || firebaseErr?.message || "";
+        const fbErrMsg = `${firebaseErr?.code || ""} ${firebaseErr?.message || ""}`.toLowerCase();
         
         let friendlyReason = "";
-        if (fbErrMsg.includes("configuration-not-found") || fbErrMsg.includes("CONFIGURATION_NOT_FOUND")) {
+        if (fbErrMsg.includes("region") || fbErrMsg.includes("operation-not-allowed") || fbErrMsg.includes("operation_not_allowed")) {
+          friendlyReason = lang === "hi"
+            ? "Firebase SMS Region Policy: Google नए प्रोजेक्ट्स में डिफ़ॉल्ट रूप से भारत (+91) पर SMS ब्लॉक रखता है। कृपया Firebase Console -> Authentication -> Settings -> 'SMS region policy' में भारत (+91) चालू करें, अथवा 'Phone numbers for testing' में अपना नंबर जोड़ें।"
+            : "Firebase SMS Region Policy: Google blocks SMS to India (+91) by default on new projects. Go to Firebase Console -> Authentication -> Settings tab -> 'SMS region policy' and allow India (+91), OR add your number under 'Phone numbers for testing'.";
+        } else if (fbErrMsg.includes("configuration-not-found")) {
           friendlyReason = lang === "hi"
             ? "Firebase Auth सक्रिय नहीं है: कृपया Firebase Console (hackathon-7c018) में Authentication पर जाकर 'Get started' पर क्लिक करें और 'Phone' सक्षम करें।"
             : "Firebase Auth Not Activated: Please open Firebase Console -> Authentication -> click 'Get started' and enable 'Phone' provider.";
@@ -147,10 +151,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           friendlyReason = lang === "hi"
             ? "Firebase Domain Error: कृपया Firebase Console -> Authentication -> Settings -> Authorized Domains में 'hackathon-final-project-beige.vercel.app' जोड़ें।"
             : "Firebase Domain Error: Please add 'hackathon-final-project-beige.vercel.app' to Firebase Console -> Authentication -> Settings -> Authorized domains.";
-        } else if (fbErrMsg.includes("operation-not-allowed")) {
-          friendlyReason = lang === "hi"
-            ? "Phone Sign-in बंद है: कृपया Firebase Console -> Authentication -> Sign-in method में जाकर 'Phone' को Enable करें।"
-            : "Phone Sign-in Disabled: Please enable 'Phone' under Firebase Console -> Authentication -> Sign-in method.";
         } else if (fbErrMsg.includes("already been rendered")) {
           friendlyReason = lang === "hi"
             ? "reCAPTCHA रिसेट कर दिया गया है। कृपया दोबारा 'ओटीपी प्राप्त करें' पर क्लिक करें।"
@@ -160,7 +160,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             ? "एसएमएस कोटा समाप्त: Firebase SMS सीमा पूरी हो चुकी है। कृपया डेमो टेस्ट कोड (123456) का उपयोग करें।"
             : "SMS Quota Exceeded: Daily SMS quota reached. Please use Demo Test Code (123456).";
         } else {
-          friendlyReason = `Firebase SMS Gateway Error (${fbErrMsg || "Failed to dispatch SMS"}).`;
+          friendlyReason = `Firebase SMS Gateway Error: ${firebaseErr.message || fbErrMsg}`;
         }
 
         setErrorMsg(friendlyReason);
