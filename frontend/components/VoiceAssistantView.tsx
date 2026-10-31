@@ -15,7 +15,6 @@ import {
   ExternalLink,
   Send,
   Loader2,
-  Globe2,
   CheckCircle2,
   Info
 } from "lucide-react";
@@ -480,53 +479,6 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-        </div>
-      </div>
-
-      {/* Language Quick Switcher Chips */}
-      <div className="pt-3 pb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-        <span className="text-[11px] font-bold text-gray-500 shrink-0 flex items-center space-x-1">
-          <Globe2 className="w-3 h-3 text-[#104E8B]" />
-          <span>Language:</span>
-        </span>
-        {VOICE_LANGUAGES.map((v) => {
-          const isSelected = selectedVoiceLang === v.code || (selectedVoiceLang === "auto" && activeLangCode === v.langKey);
-          return (
-            <button
-              key={v.code}
-              type="button"
-              onClick={() => {
-                setSelectedVoiceLang(v.code);
-                if (v.code !== "auto") {
-                  setActiveLangCode(v.langKey);
-                }
-                window.speechSynthesis?.cancel();
-                setIsPlaying(false);
-              }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition shrink-0 border ${
-                isSelected
-                  ? "bg-red-600 text-white border-red-600 shadow-xs"
-                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              {v.native}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Active Language Detection Badge */}
-      <div className="pt-1 flex items-center justify-between">
-        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#104E8B] text-xs font-bold shadow-2xs">
-          <Activity className="w-3.5 h-3.5 text-[#104E8B]" />
-          <span>
-            Active Voice Language: <strong>{currentLangMeta.label}</strong>
-          </span>
-          {selectedVoiceLang === "auto" && (
-            <span className="ml-1 text-[10px] bg-blue-200/80 px-1.5 py-0.2 rounded-md text-blue-900 font-extrabold">
-              Auto-Detected
-            </span>
-          )}
         </div>
       </div>
 
