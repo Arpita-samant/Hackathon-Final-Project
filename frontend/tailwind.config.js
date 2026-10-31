@@ -34,9 +34,5 @@ module.exports = {
       }
     },
   },
-  plugins: [
-    function({ addVariant }) {
-      addVariant('high-contrast', '.high-contrast &');
-    }
-  ],
+  plugins: [],
 }
