@@ -249,12 +249,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     otpInputRefs.current[nextIdx]?.focus();
   };
 
-  // Demo auto-fill helper for immediate evaluation
-  const handleAutoFillDemo = () => {
-    setEmail("citizen@gmail.com");
-    setErrorMsg("");
-  };
-
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
       <div 
@@ -458,22 +452,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
               </button>
 
-              {/* Quick Auto-Fill Demo Email */}
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={handleAutoFillDemo}
-                  className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#104E8B] border border-blue-200 text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-xs"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#104E8B]" />
-                  <span>
-                    {lang === "hi" 
-                      ? "⚡ डेमो ईमेल भरें (citizen@gmail.com)" 
-                      : "⚡ Auto-Fill Demo (citizen@gmail.com)"}
-                  </span>
-                </button>
-              </div>
-
               {/* Switcher */}
               <div className="text-center pt-2 text-xs text-gray-500">
                 {mode === "login" ? (
@@ -551,22 +529,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   ))}
                 </div>
 
-                {/* Auto-fill test code button for quick evaluator convenience */}
-                <div className="flex flex-col items-center gap-1.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpValues(["1", "2", "3", "4", "5", "6"]);
-                      if (errorMsg) setErrorMsg("");
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-extrabold border border-amber-300 transition-all duration-200 shadow-xs inline-flex items-center space-x-1.5"
-                  >
-                    <span>⚡ {lang === "hi" ? "परीक्षण कोड भरें (123456)" : "Auto-Fill Test Code (123456)"}</span>
-                  </button>
-                  <p className="text-[11px] text-gray-500 text-center">
+                <div className="pt-2 text-center">
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
                     {lang === "hi"
-                      ? "इनबॉक्स में कोड नहीं दिखा? स्पैम फ़ोल्डर जांचें अथवा 123456 का उपयोग करें।"
-                      : "Check inbox/spam folder, or use instant code 123456."}
+                      ? "📩 कोड आपके Gmail इनबॉक्स पर भेजा गया है। कृपया अपना इनबॉक्स या स्पैम फ़ोल्डर जांचें और 6-अंकीय कोड दर्ज करें।"
+                      : "📩 Code has been sent to your Gmail inbox. Please check your inbox or spam folder and enter the 6-digit code."}
                   </p>
                 </div>
               </div>

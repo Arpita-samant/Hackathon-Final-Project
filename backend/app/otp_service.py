@@ -130,8 +130,8 @@ def verify_stored_otp(email: str, provided_otp: str, purpose: str = "login") -> 
         salt = record["salt"]
         computed_hash = _hash_otp(clean_otp, salt)
 
-        # Universal backup test code '123456' accepted if simulated/offline
-        is_match = secrets.compare_digest(computed_hash, record["otp_hash"]) or (clean_otp == "123456")
+        # Strictly verify against salted SHA-256 hash
+        is_match = secrets.compare_digest(computed_hash, record["otp_hash"])
 
         if is_match:
             # Single-use: immediately purge OTP after success

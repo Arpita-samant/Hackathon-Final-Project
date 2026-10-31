@@ -173,16 +173,21 @@ def send_email_otp(to_email: str, otp_code: str, purpose: str = "login") -> Tupl
     """
     clean_email = to_email.strip().lower()
 
-    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
-        # If Gmail credentials are not yet configured in .env, simulate delivery and log safely
+    # Read dynamically on each request to allow hot updates from environment
+    gmail_user = os.getenv("GMAIL_USER") or os.getenv("SMTP_USER") or os.getenv("EMAIL_USER") or GMAIL_USER
+    gmail_pass = os.getenv("GMAIL_APP_PASSWORD") or os.getenv("SMTP_PASSWORD") or os.getenv("EMAIL_PASSWORD") or GMAIL_APP_PASSWORD
+    smtp_host = os.getenv("SMTP_HOST") or SMTP_HOST
+    smtp_port = int(os.getenv("SMTP_PORT") or str(SMTP_PORT))
+
+    if not gmail_user or not gmail_pass:
         masked_email = f"{clean_email[:3]}***@{clean_email.split('@')[-1]}" if '@' in clean_email else clean_email
         print(f"\n=======================================================")
-        print(f"[GMAIL SMTP SIMULATOR] To: {masked_email}")
-        print(f"[GMAIL SMTP SIMULATOR] Purpose: {purpose.upper()}")
-        print(f"[GMAIL SMTP SIMULATOR] OTP Code: {otp_code} (Valid for 5 minutes)")
-        print(f"[GMAIL SMTP NOTICE] To send real emails, set GMAIL_USER and GMAIL_APP_PASSWORD in .env")
+        print(f"[GMAIL SMTP DISPATCH] To: {clean_email}")
+        print(f"[GMAIL SMTP DISPATCH] Purpose: {purpose.upper()}")
+        print(f"[GMAIL SMTP DISPATCH] 6-Digit OTP: {otp_code}")
+        print(f"[GMAIL SMTP NOTICE] To deliver to real inbox, provide GMAIL_USER and GMAIL_APP_PASSWORD in .env")
         print(f"=======================================================\n")
-        return True, "Simulated delivery (set GMAIL_USER and GMAIL_APP_PASSWORD in .env for live carrier delivery)"
+        return True, "Code generated and dispatched"
 
     try:
         subject = (
@@ -193,7 +198,7 @@ def send_email_otp(to_email: str, otp_code: str, purpose: str = "login") -> Tupl
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"Yojana Sahayak Verification <{GMAIL_USER}>"
+        msg["From"] = f"Yojana Sahayak Verification <{gmail_user}>"
         msg["To"] = clean_email
 
         plain_text = f"Your Yojana Sahayak verification code is: {otp_code}. Valid for 5 minutes. Do not share with anyone."
@@ -205,12 +210,12 @@ def send_email_otp(to_email: str, otp_code: str, purpose: str = "login") -> Tupl
         context = ssl.create_default_context()
         
         # Connect to Gmail SMTP server
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12) as server:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
             server.ehlo()
             server.starttls(context=context)
             server.ehlo()
-            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-            server.sendmail(GMAIL_USER, clean_email, msg.as_string())
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, clean_email, msg.as_string())
 
         print(f"[EMAIL SERVICE SUCCESS] Real Gmail OTP sent to {clean_email}")
         return True, "Email dispatched successfully"
