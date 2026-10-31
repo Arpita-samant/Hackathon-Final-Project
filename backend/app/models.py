@@ -110,14 +110,26 @@ class VerifyOTPRequest(BaseModel):
     caste_category: Optional[str] = "General"
     annual_income: Optional[float] = 0.0
 
+class RegisterRequest(BaseModel):
+    email: str = Field(..., description='Citizen email address')
+    password: str = Field(..., min_length=6, description='Password (minimum 6 characters)')
+    name: Optional[str] = 'Citizen'
+    occupation_category: Optional[str] = 'Farmer'
+    state: Optional[str] = 'All-India'
+    caste_category: Optional[str] = 'General'
+    annual_income: Optional[float] = 0.0
+
 class LoginRequest(BaseModel):
-    phone: str
+    email: Optional[str] = None
+    password: Optional[str] = None
+    phone: Optional[str] = None
     otp: Optional[str] = None
     otp_code: Optional[str] = None
 
 class UserProfileResponse(BaseModel):
     id: str
-    phone: str
+    email: Optional[str] = None
+    phone: Optional[str] = ''
     name: str
     occupation_category: str
     state: str

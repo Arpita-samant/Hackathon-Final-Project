@@ -5,6 +5,7 @@ import { Language, translations } from "@/lib/translations";
 import { 
   User, 
   Phone, 
+  Mail,
   GraduationCap, 
   Sprout, 
   Briefcase, 
@@ -232,13 +233,22 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 pt-0.5">
               <span className="flex items-center space-x-1">
-                <Phone className="w-3.5 h-3.5 text-gray-400" />
-                <span className="font-semibold text-gray-700">+91 {profile.phone}</span>
+                {profile.email ? (
+                  <>
+                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="font-semibold text-gray-700">{profile.email}</span>
+                  </>
+                ) : (
+                  <>
+                    <Phone className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="font-semibold text-gray-700">{profile.phone ? `+91 ${profile.phone}` : "citizen@gmail.com"}</span>
+                  </>
+                )}
               </span>
               <span>•</span>
               <span className="text-[#1E7E34] font-bold flex items-center space-x-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#2BB656]" />
-                <span>{t.smsVerifiedBadge || "SMS Verified"}</span>
+                <span>{lang === "hi" ? "सत्यापित खाता (JWT)" : "Verified Account (JWT)"}</span>
               </span>
               <span>•</span>
               <span>{profile.state || "All-India"}</span>

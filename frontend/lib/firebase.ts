@@ -58,11 +58,12 @@ export function getFirebaseAuth(): Auth | null {
  * Dispatches an SMS verification code to an Indian mobile number (+91...)
  * via Firebase Phone Authentication with invisible reCAPTCHA.
  * 
- * Safely resets DOM containers to prevent "reCAPTCHA has already been rendered in this element".
+ * Generates an isolated, fresh DOM element on every attempt to completely
+ * prevent "reCAPTCHA has already been rendered in this element".
  */
 export async function sendFirebaseOtp(
   phone10Digits: string,
-  containerId: string = "recaptcha-container"
+  _containerId?: string
 ): Promise<ConfirmationResult> {
   const auth = getFirebaseAuth();
   if (!auth) {
@@ -81,28 +82,31 @@ export async function sendFirebaseOtp(
     (window as any).__yojanaRecaptchaVerifier = null;
   }
 
-  // 2. Ensure pristine container element by replacing old container with clean clone
-  let targetElement: HTMLElement;
-  const existingEl = typeof document !== "undefined" ? document.getElementById(containerId) : null;
-  
-  if (existingEl && existingEl.parentNode) {
-    // Clone without children to completely purge any previous reCAPTCHA widget / iframe
-    const freshEl = existingEl.cloneNode(false) as HTMLElement;
-    existingEl.parentNode.replaceChild(freshEl, existingEl);
-    targetElement = freshEl;
-  } else {
-    targetElement = document.createElement("div");
-    targetElement.id = containerId;
-    targetElement.style.position = "fixed";
-    targetElement.style.bottom = "0";
-    targetElement.style.right = "0";
-    targetElement.style.zIndex = "-1";
-    targetElement.style.opacity = "0";
-    document.body.appendChild(targetElement);
+  // 2. Remove any previously created reCAPTCHA containers from DOM
+  if (typeof document !== "undefined") {
+    const oldContainers = document.querySelectorAll("[data-yojana-recaptcha]");
+    oldContainers.forEach((el) => {
+      try {
+        el.remove();
+      } catch (_) {}
+    });
   }
 
-  // 3. Initialize fresh RecaptchaVerifier
-  const appVerifier = new RecaptchaVerifier(auth, targetElement, {
+  // 3. Create a brand new unique DOM container for this specific verification call
+  const uniqueId = `recaptcha-widget-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+  const freshElement = document.createElement("div");
+  freshElement.id = uniqueId;
+  freshElement.setAttribute("data-yojana-recaptcha", "true");
+  freshElement.style.position = "fixed";
+  freshElement.style.bottom = "0";
+  freshElement.style.right = "0";
+  freshElement.style.zIndex = "-1";
+  freshElement.style.opacity = "0";
+  freshElement.style.pointerEvents = "none";
+  document.body.appendChild(freshElement);
+
+  // 4. Initialize fresh RecaptchaVerifier
+  const appVerifier = new RecaptchaVerifier(auth, freshElement, {
     size: "invisible",
     callback: () => {
       // reCAPTCHA solved
@@ -121,8 +125,18 @@ export async function sendFirebaseOtp(
     (window as any).__yojanaRecaptchaVerifier = appVerifier;
   }
 
-  const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-  return confirmationResult;
+  try {
+    const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+    return confirmationResult;
+  } catch (err: any) {
+    try {
+      appVerifier.clear();
+    } catch (_) {}
+    if (typeof window !== "undefined") {
+      (window as any).__yojanaRecaptchaVerifier = null;
+    }
+    throw err;
+  }
 }
 
 /**

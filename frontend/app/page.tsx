@@ -40,6 +40,7 @@ export default function Home() {
     landholding: currentUser?.occupation_category === "Farmer" ? "1.5 Hectare" : "0 Acre",
     bankAccountMasked: currentUser ? "XXXX" + (currentUser.phone ? currentUser.phone.slice(-4) : "1234") : "",
     phone: currentUser?.phone ? `+91 ${currentUser.phone}` : "",
+    email: currentUser?.email || "",
   };
 
   // Eligibility Evaluation State
@@ -222,7 +223,12 @@ export default function Home() {
         {currentTab === "family" && (
           <FamilyMembersPage 
             lang={lang} 
-            onExploreSchemes={() => handleTabChange("schemes")} 
+            onExploreSchemes={() => handleTabChange("schemes")}
+            onEvaluateHousehold={(results) => {
+              setEvaluationResults(results);
+              setCurrentTab("eligibility");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }} 
             currentUser={currentUser}
             onOpenLogin={() => {
               setAuthMode("login");
@@ -287,3 +293,4 @@ export default function Home() {
     </div>
   );
 }
+
