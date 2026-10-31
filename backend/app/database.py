@@ -10,8 +10,9 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
-DB_FILE = os.path.join(os.path.dirname(__file__), "..", "yojana_sahayak.db")
-DATABASE_URL = f"sqlite:///{DB_FILE}"
+DB_DIR = "/tmp" if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") else os.path.join(os.path.dirname(__file__), "..")
+DB_FILE = os.path.join(DB_DIR, "yojana_sahayak.db")
+DATABASE_URL = os.environ.get("DATABASE_URL") or f"sqlite:///{DB_FILE}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
