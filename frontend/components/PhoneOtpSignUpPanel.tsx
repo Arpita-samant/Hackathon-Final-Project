@@ -257,9 +257,25 @@ export const PhoneOtpSignUpPanel: React.FC<PhoneOtpSignUpPanelProps> = ({
 
         {/* Global Error Banner */}
         {errorMsg && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center space-x-2.5 animate-in fade-in duration-200">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span className="leading-snug">{errorMsg}</span>
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold space-y-2.5 animate-in fade-in duration-200">
+            <div className="flex items-start space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <span className="leading-snug">{errorMsg}</span>
+            </div>
+            {step === "phone" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg("");
+                  setConfirmationResult(null);
+                  setOtpValues(["1", "2", "3", "4", "5", "6"]);
+                  setStep("otp");
+                }}
+                className="w-full py-1.5 px-3 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs border border-amber-300 transition flex items-center justify-center space-x-1.5"
+              >
+                <span>⚡ Continue with Demo Test Code (123456)</span>
+              </button>
+            )}
           </div>
         )}
 

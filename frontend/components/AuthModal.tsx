@@ -135,22 +135,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setLoading(false);
         return;
       } catch (firebaseErr: any) {
-        console.warn("Firebase Phone Auth SMS error, falling back to local gateway:", firebaseErr);
+        console.error("Firebase Phone Auth SMS error:", firebaseErr);
         const fbErrMsg = firebaseErr?.code || firebaseErr?.message || "";
-        if (fbErrMsg.includes("unauthorized-domain")) {
-          setErrorMsg(
-            lang === "hi"
-              ? "Firebase Domain Warning: कृपया Firebase Console में Authorized Domains में अपनी वेबसाइट का डोमेन जोड़ें। (परीक्षण हेतु नीचे ⚡ टेस्ट कोड 123456 उपयोग करें)"
-              : "Firebase Domain Warning: Please add this website domain to Firebase Console -> Authentication -> Settings -> Authorized domains. (Use ⚡ Demo Code 123456 below to test)"
-          );
+        
+        let friendlyReason = "";
+        if (fbErrMsg.includes("configuration-not-found") || fbErrMsg.includes("CONFIGURATION_NOT_FOUND")) {
+          friendlyReason = lang === "hi"
+            ? "Firebase Auth सक्रिय नहीं है: कृपया Firebase Console (hackathon-7c018) में Authentication पर जाकर 'Get started' पर क्लिक करें और 'Phone' सक्षम करें।"
+            : "Firebase Auth Not Activated: Please open Firebase Console -> Authentication -> click 'Get started' and enable 'Phone' provider.";
+        } else if (fbErrMsg.includes("unauthorized-domain")) {
+          friendlyReason = lang === "hi"
+            ? "Firebase Domain Error: कृपया Firebase Console -> Authentication -> Settings -> Authorized Domains में 'hackathon-final-project-beige.vercel.app' जोड़ें।"
+            : "Firebase Domain Error: Please add 'hackathon-final-project-beige.vercel.app' to Firebase Console -> Authentication -> Settings -> Authorized domains.";
         } else if (fbErrMsg.includes("operation-not-allowed")) {
-          setErrorMsg(
-            lang === "hi"
-              ? "Firebase Notice: कृपया Firebase Console में Phone Provider सक्षम करें। (परीक्षण हेतु नीचे ⚡ टेस्ट कोड 123456 उपयोग करें)"
-              : "Firebase Notice: Please enable 'Phone' under Firebase Console -> Authentication -> Sign-in method. (Use ⚡ Demo Code 123456 below to test)"
-          );
+          friendlyReason = lang === "hi"
+            ? "Phone Sign-in बंद है: कृपया Firebase Console -> Authentication -> Sign-in method में जाकर 'Phone' को Enable करें।"
+            : "Phone Sign-in Disabled: Please enable 'Phone' under Firebase Console -> Authentication -> Sign-in method.";
+        } else if (fbErrMsg.includes("quota-exceeded") || fbErrMsg.includes("too-many-requests")) {
+          friendlyReason = lang === "hi"
+            ? "एसएमएस कोटा समाप्त: Firebase SMS सीमा पूरी हो चुकी है। कृपया डेमो टेस्ट कोड (123456) का उपयोग करें।"
+            : "SMS Quota Exceeded: Daily SMS quota reached. Please use Demo Test Code (123456).";
+        } else {
+          friendlyReason = `Firebase SMS Gateway Error (${fbErrMsg || "Failed to dispatch SMS"}).`;
         }
-        // Continue to fallback below
+
+        setErrorMsg(friendlyReason);
+        setLoading(false);
+        return;
       }
     }
 
@@ -445,11 +456,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* Error message */}
+        {/* Error message with instant bypass button */}
         {errorMsg && (
-          <div className="mx-6 mt-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-            <span>{errorMsg}</span>
+          <div className="mx-6 mt-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold space-y-2.5 animate-in fade-in duration-200">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{errorMsg}</span>
+            </div>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg("");
+                  setConfirmationResult(null);
+                  setOtpValues(["1", "2", "3", "4", "5", "6"]);
+                  setSmsSentNotice(
+                    lang === "hi"
+                      ? "⚡ डेमो टेस्ट मोड: कोड 123456 भर दिया गया है। कृपया 'सत्यापित करें' दबाएं।"
+                      : "⚡ Demo Test Mode: Test code 123456 prefilled. Click 'Verify' to test."
+                  );
+                  setStep("otp");
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs border border-amber-300 transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs"
+              >
+                <span>⚡ {lang === "hi" ? "डेमो टेस्ट कोड (123456) से आगे बढ़ें" : "Continue with Demo Test Code (123456)"}</span>
+              </button>
+            </div>
           </div>
         )}
 
