@@ -285,16 +285,10 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Box 3: Verified Portal & Application Process */}
+              {/* Box 3: Application Process */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-bold text-xs text-gray-900">
-                    {t.applicationProcessTitle}
-                  </div>
-                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-[#1E7E34] border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#2BB656]" />
-                    <span>{scheme.source_domain || "gov.in"}</span>
-                  </span>
+                <div className="font-bold text-xs text-gray-900">
+                  {t.applicationProcessTitle}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -302,9 +296,9 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                     href={scheme.direct_apply_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-[#104E8B] hover:text-[#0A2540] flex items-center space-x-1"
+                    className="font-bold text-[#104E8B] hover:text-[#0A2540] flex items-center space-x-1 hover:underline"
                   >
-                    <span>{t.applicationLinkText} ({scheme.source_portal_name || "Official Portal"})</span>
+                    <span>{t.applicationLinkText}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
 
@@ -313,7 +307,7 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                       href={scheme.guideline_pdf_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-[#1E7E34] hover:text-[#2BB656] flex items-center space-x-1"
+                      className="font-bold text-[#1E7E34] hover:text-[#2BB656] flex items-center space-x-1 hover:underline"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>{lang === "hi" ? "आधिकारिक दिशा-निर्देश (PDF)" : "Official Guidelines (PDF)"}</span>
@@ -321,7 +315,7 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                   )}
                 </div>
               </div>
-            </div>
+                        </div>
 
             {/* Bottom-Right: You are Eligible Card & Actions (Matching Image 3) */}
             <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
@@ -358,7 +352,7 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                   href={scheme.direct_apply_url || "https://www.india.gov.in"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3.5 px-6 rounded-xl bg-[#104E8B] hover:bg-[#0A2540] text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center space-x-2"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#104E8B] to-[#1E7E34] hover:from-[#0A2540] hover:to-[#166534] text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-xl transform active:scale-95 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
                 >
                   <ExternalLink className="w-4 h-4" />
                   <span>{lang === "hi" ? "आधिकारिक पोर्टल पर आवेदन करें" : "Apply on Official Portal"}</span>

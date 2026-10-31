@@ -705,7 +705,7 @@ SCHEMES_DB: List[Dict[str, Any]] = [
             "Employment"
         ],
         "badge_color": "blue",
-        "image_url": "https://images.unsplash.com/photo-1516726817505-f5ed825624d8?auto=format&fit=crop&w=800&q=80",
+        "image_url": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=800&q=80",
         "description": "Guaranteed monthly pension of ₹1,000 to ₹5,000 per month starting after age 60 for unorganized sector workers.",
         "description_hi": "60 वर्ष की आयु के बाद असंगठित क्षेत्र के कामगारों को ₹1,000 से ₹5,000 प्रति माह की गारंटीकृत आजीवन पेंशन।",
         "max_benefit_amount": 60000.0,

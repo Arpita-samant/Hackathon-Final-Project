@@ -6,23 +6,15 @@ import {
   Search, 
   ChevronLeft, 
   ChevronRight, 
-  Filter,
-  CheckCircle,
-  Sparkles,
-  Database,
-  ExternalLink,
-  ShieldCheck,
-  RefreshCw,
-  Layers
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
-import { DataSourcesModal } from "@/components/DataSourcesModal";
 
 interface SchemeDirectoryProps {
   lang: Language;
   onSelectScheme: (schemeId: string) => void;
   initialQuery?: string;
   initialCategory?: string;
-  initialDomain?: string;
 }
 
 export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
@@ -30,28 +22,15 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
   onSelectScheme,
   initialQuery = "",
   initialCategory = "All",
-  initialDomain = "All",
 }) => {
   const t = translations[lang] || translations.en;
   const [schemes, setSchemes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || "All");
-  const [selectedDomain, setSelectedDomain] = useState(initialDomain || "All");
   const [currentPage, setCurrentPage] = useState(0);
-  const [isDataSourcesModalOpen, setIsDataSourcesModalOpen] = useState(false);
 
   const categories = ["All", "Welfare", "Agriculture", "Scholarship", "Housing", "Health", "Employment"];
-
-  const domainOptions = [
-    { id: "All", label: lang === "hi" ? "सभी 9 पोर्टल" : "All 9 Portals" },
-    { id: "dbtbharat.gov.in", label: "DBT Bharat" },
-    { id: "kisansuvidha.gov.in", label: "Kisan Suvidha" },
-    { id: "scholarships.gov.in", label: "National Scholarships (NSP)" },
-    { id: "eservices.uk.gov.in", label: "State e-District (Uttarakhand)" },
-    { id: "buddy4study.com", label: "Buddy4Study & CSR" },
-    { id: "vidyasaarathi.co.in", label: "NSDL Vidyasaarathi" },
-  ];
 
   const categoryLabels: Record<string, string> = {
     All: t.catAll,
@@ -78,8 +57,7 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
   useEffect(() => {
     if (initialQuery) setSearchQuery(initialQuery);
     if (initialCategory) setSelectedCategory(initialCategory);
-    if (initialDomain) setSelectedDomain(initialDomain);
-  }, [initialQuery, initialCategory, initialDomain]);
+  }, [initialQuery, initialCategory]);
 
   // Filter schemes
   const filteredSchemes = schemes.filter((s) => {
@@ -89,20 +67,14 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
       s.name.toLowerCase().includes(q) ||
       (s.name_hi && s.name_hi.toLowerCase().includes(q)) ||
       (s.description && s.description.toLowerCase().includes(q)) ||
-      (s.ministry && s.ministry.toLowerCase().includes(q)) ||
-      (s.source_portal_name && s.source_portal_name.toLowerCase().includes(q)) ||
-      (s.source_domain && s.source_domain.toLowerCase().includes(q));
+      (s.ministry && s.ministry.toLowerCase().includes(q));
 
     const matchesCategory =
       selectedCategory === "All" ||
       s.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
       (s.tags && s.tags.some((t: string) => t.toLowerCase() === selectedCategory.toLowerCase()));
 
-    const matchesDomain =
-      selectedDomain === "All" ||
-      (s.source_domain && s.source_domain.toLowerCase().includes(selectedDomain.toLowerCase()));
-
-    return matchesQuery && matchesCategory && matchesDomain;
+    return matchesQuery && matchesCategory;
   });
 
   const pageSize = 3;
@@ -124,84 +96,51 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
   const getButtonBg = (color: string) => {
     switch (color) {
       case "green":
-        return "bg-[#1E7E34] hover:bg-[#2BB656]";
+        return "bg-gradient-to-r from-[#1E7E34] to-[#2BB656] hover:from-[#19692c] hover:to-[#249c49]";
       case "blue":
-        return "bg-[#104E8B] hover:bg-[#0A2540]";
+        return "bg-gradient-to-r from-[#104E8B] to-[#1e6bb8] hover:from-[#0c3c6b] hover:to-[#165696]";
       case "orange":
-        return "bg-[#EA580C] hover:bg-[#C2410C]";
+        return "bg-gradient-to-r from-[#EA580C] to-[#F97316] hover:from-[#c2410c] hover:to-[#ea580c]";
       case "purple":
-        return "bg-[#7C3AED] hover:bg-[#6D28D9]";
+        return "bg-gradient-to-r from-[#7C3AED] to-[#9333EA] hover:from-[#6d28d9] hover:to-[#7e22ce]";
       case "teal":
-        return "bg-[#0F766E] hover:bg-[#115E59]";
+        return "bg-gradient-to-r from-[#0F766E] to-[#14B8A6] hover:from-[#115e59] hover:to-[#0d9488]";
       case "pink":
-        return "bg-[#DB2777] hover:bg-[#BE185D]";
+        return "bg-gradient-to-r from-[#DB2777] to-[#EC4899] hover:from-[#be185d] hover:to-[#db2777]";
       default:
-        return "bg-[#104E8B] hover:bg-[#0A2540]";
+        return "bg-gradient-to-r from-[#104E8B] to-[#1E7E34] hover:from-[#0c3c6b] hover:to-[#19692c]";
     }
   };
 
   const getTagColor = (tag: string) => {
     switch (tag.toLowerCase()) {
       case "agriculture":
-        return "bg-[#1E7E34] text-white";
+        return "bg-emerald-50 text-[#1E7E34] border border-emerald-200";
       case "scholarship":
-        return "bg-[#7C3AED] text-white";
+        return "bg-purple-50 text-purple-700 border border-purple-200";
       case "housing":
-        return "bg-[#EA580C] text-white";
+        return "bg-amber-50 text-amber-800 border border-amber-200";
       case "health":
-        return "bg-[#E11D48] text-white";
+        return "bg-rose-50 text-rose-700 border border-rose-200";
       case "employment":
-        return "bg-[#0F766E] text-white";
+        return "bg-teal-50 text-teal-700 border border-teal-200";
       case "welfare":
       default:
-        return "bg-[#104E8B] text-white";
+        return "bg-blue-50 text-[#104E8B] border border-blue-200";
     }
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto py-2">
-      {/* Real-Time Live Portals Banner & Modal Trigger */}
-      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-r from-[#0A2540] to-[#104E8B] text-white p-3.5 sm:p-4 rounded-2xl shadow-md border border-blue-900">
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/20 text-[#2BB656]">
-            <Database className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#2BB656] animate-pulse" />
-              <span className="text-xs sm:text-sm font-extrabold tracking-tight">
-                {lang === "hi" 
-                  ? "रीयल-टाइम 9 आधिकारिक डेटा स्रोत सक्रिय" 
-                  : "9 Authoritative Portals Ingested in Real-Time"}
-              </span>
-            </div>
-            <p className="text-[11px] text-blue-200 mt-0.5">
-              {lang === "hi"
-                ? "DBT Bharat • UMANG • Kisan Suvidha • NSP • Apuni Sarkar • Buddy4Study • Vidyasaarathi"
-                : "DBT Bharat • UMANG • Kisan Suvidha • NSP • Apuni Sarkar • Buddy4Study • Vidyasaarathi"}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsDataSourcesModalOpen(true)}
-          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#1E7E34] hover:bg-[#2BB656] text-white text-xs font-bold transition shadow-sm flex items-center justify-center space-x-1.5 shrink-0"
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>{lang === "hi" ? "डेटा स्रोत मॉनिटर देखें" : "View Data Sources"}</span>
-        </button>
-      </div>
-
+    <div className="space-y-8 max-w-7xl mx-auto py-4">
       {/* Top Centered Search Bar & Category Filter Pills */}
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-3xl mx-auto space-y-4">
         {/* Search Bar */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             setCurrentPage(0);
           }}
-          className="flex items-center bg-white rounded-2xl shadow-sm border border-gray-200 p-1.5 focus-within:ring-2 focus-within:ring-[#104E8B] focus-within:border-transparent"
+          className="flex items-center bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-200 p-1.5 focus-within:ring-2 focus-within:ring-[#104E8B] focus-within:border-transparent transition-all duration-200"
         >
           <div className="pl-4 pr-2 text-gray-400">
             <Search className="w-5 h-5 text-gray-400" />
@@ -218,7 +157,7 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
           />
           <button
             type="submit"
-            className="bg-[#1E7E34] hover:bg-[#2BB656] text-white px-7 py-2.5 rounded-xl text-sm font-bold transition shadow-sm shrink-0"
+            className="bg-[#1E7E34] hover:bg-[#2BB656] text-white px-7 py-2.5 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transform active:scale-95 hover:-translate-y-0.5 transition-all duration-200 shrink-0"
           >
             {t.searchButton}
           </button>
@@ -237,41 +176,13 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
                   setSelectedCategory(cat);
                   setCurrentPage(0);
                 }}
-                className={`px-4 py-1.5 rounded-full font-semibold transition ${
+                className={`px-4 py-2 rounded-full font-semibold transition-all duration-200 transform active:scale-95 hover:-translate-y-0.5 ${
                   isSelected
-                    ? "bg-[#0A2540] text-white shadow-xs"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/60"
+                    ? "bg-[#0A2540] text-white shadow-md ring-2 ring-[#0A2540]/20"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/60 hover:shadow-xs"
                 }`}
               >
                 {categoryLabels[cat] || cat}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Filter by Authoritative Portal Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] pt-1">
-          <span className="text-gray-400 font-semibold mr-1 flex items-center space-x-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#1E7E34]" />
-            <span>{lang === "hi" ? "पोर्टल द्वारा फ़िल्टर करें:" : "Portal Source:"}</span>
-          </span>
-          {domainOptions.map((d) => {
-            const isDomainSelected = selectedDomain === d.id;
-            return (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => {
-                  setSelectedDomain(d.id);
-                  setCurrentPage(0);
-                }}
-                className={`px-3 py-1 rounded-lg font-bold transition ${
-                  isDomainSelected
-                    ? "bg-[#104E8B] text-white shadow-xs"
-                    : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
-                }`}
-              >
-                {d.label}
               </button>
             );
           })}
@@ -280,46 +191,45 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
 
       {/* Main Content Area with Carousel Controls */}
       <div className="relative px-2 sm:px-6">
-        {/* Left Arrow Button */}
+        {/* Left Arrow Button with Hover Effect */}
         <button
           onClick={handlePrev}
-          className="absolute -left-2 sm:left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:text-[#104E8B] hover:scale-105 transition"
+          className="absolute -left-2 sm:left-0 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white shadow-md hover:shadow-xl border border-gray-200 flex items-center justify-center text-gray-700 hover:text-[#104E8B] hover:scale-110 active:scale-95 transition-all duration-200"
           aria-label="Previous Page"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
 
-        {/* Right Arrow Button */}
+        {/* Right Arrow Button with Hover Effect */}
         <button
           onClick={handleNext}
-          className="absolute -right-2 sm:right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:text-[#104E8B] hover:scale-105 transition"
+          className="absolute -right-2 sm:right-0 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white shadow-md hover:shadow-xl border border-gray-200 flex items-center justify-center text-gray-700 hover:text-[#104E8B] hover:scale-110 active:scale-95 transition-all duration-200"
           aria-label="Next Page"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
 
-        {/* Schemes Grid Cards */}
+        {/* Schemes Grid Cards - Attractive, Simple & Clean */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="bg-white rounded-2xl border border-gray-200 h-96 animate-pulse" />
+              <div key={n} className="bg-white rounded-3xl border border-gray-200 h-96 animate-pulse" />
             ))}
           </div>
         ) : filteredSchemes.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-500 max-w-lg mx-auto">
+          <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center text-gray-500 max-w-lg mx-auto shadow-sm">
             <p className="font-semibold text-base text-gray-800">{t.noSchemesFound}</p>
             <p className="text-xs text-gray-500 mt-1">
               {lang === "hi" 
-                ? "फ़िल्टर साफ़ करें या 'सभी पोर्टल' चुनें।" 
-                : "Try clearing your search query or selecting 'All Portals'."}
+                ? "फ़िल्टर साफ़ करें या 'सभी' श्रेणी चुनें।" 
+                : "Try clearing your search query or selecting 'All'."}
             </p>
             <button
               onClick={() => {
                 setSearchQuery("");
                 setSelectedCategory("All");
-                setSelectedDomain("All");
               }}
-              className="mt-4 px-4 py-2 bg-[#104E8B] hover:bg-[#0A2540] text-white rounded-xl text-xs font-bold transition"
+              className="mt-4 px-5 py-2.5 bg-[#104E8B] hover:bg-[#0A2540] text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transform active:scale-95 hover:-translate-y-0.5 transition-all duration-200"
             >
               {t.resetFilters}
             </button>
@@ -331,54 +241,60 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
               const schemeName = lang === "hi" && scheme.name_hi ? scheme.name_hi : scheme.name;
               const schemeDesc = lang === "hi" && scheme.description_hi ? scheme.description_hi : scheme.description;
               const benefitFreq = lang === "hi" ? t.perYear : scheme.benefit_frequency;
-              const sourceDomain = scheme.source_domain || "gov.in";
 
               return (
                 <div
                   key={scheme.id}
                   onClick={() => onSelectScheme(scheme.id)}
-                  className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+                  className="bg-white rounded-3xl border border-gray-200/80 overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-300 flex flex-col justify-between cursor-pointer group hover:-translate-y-1.5 hover:border-gray-300"
                 >
                   <div>
                     {/* Photographic Cover Image */}
-                    <div className="h-48 w-full overflow-hidden bg-gray-100 relative">
+                    <div className="h-48 sm:h-52 w-full overflow-hidden bg-gray-100 relative">
                       <img
                         src={scheme.image_url}
                         alt={schemeName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80";
                         }}
                       />
-                      
-                      {/* Benefit Pill */}
-                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-extrabold text-gray-900 shadow-sm border border-gray-200">
-                        ₹{scheme.max_benefit_amount.toLocaleString("en-IN")} / {benefitFreq}
-                      </div>
 
-                      {/* Verified Source Portal Badge */}
-                      <div className="absolute bottom-2.5 left-2.5 inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-[#0A2540]/90 backdrop-blur-md text-white text-[10px] font-bold shadow-xs">
-                        <ShieldCheck className="w-3 h-3 text-[#2BB656]" />
-                        <span className="font-mono">{sourceDomain}</span>
+                      {/* Subtle Bottom Vignette */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+
+                      {/* Category Badge Top Left */}
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-extrabold text-white shadow-xs backdrop-blur-md bg-[#0A2540]/80">
+                        {categoryLabels[scheme.category] || scheme.category || "Welfare"}
+                      </div>
+                      
+                      {/* Benefit Pill Top Right */}
+                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black text-gray-900 shadow-sm border border-gray-100">
+                        ₹{scheme.max_benefit_amount.toLocaleString("en-IN")} / {benefitFreq}
                       </div>
                     </div>
 
                     {/* Card Content Body */}
                     <div className="p-5 space-y-3">
-                      <h3 className="font-extrabold text-lg text-gray-900 group-hover:text-[#104E8B] transition leading-snug">
-                        {schemeName}
-                      </h3>
+                      <div>
+                        <p className="text-[11px] font-semibold text-gray-400 tracking-wide uppercase line-clamp-1 mb-1">
+                          {scheme.ministry || "Government of India"}
+                        </p>
+                        <h3 className="font-black text-lg text-gray-900 group-hover:text-[#104E8B] transition-colors leading-snug line-clamp-1">
+                          {schemeName}
+                        </h3>
+                      </div>
 
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
                         {schemeDesc}
                       </p>
 
-                      {/* Tag Badges */}
+                      {/* Clean Tag Badges */}
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {(scheme.tags || ["Welfare"]).map((tag: string, tIdx: number) => (
                           <span
                             key={tIdx}
-                            className={`px-3 py-1 rounded-full text-[11px] font-bold ${getTagColor(tag)}`}
+                            className={`px-3 py-1 rounded-full text-[11px] font-semibold ${getTagColor(tag)}`}
                           >
                             {categoryLabels[tag] || tag}
                           </span>
@@ -387,7 +303,7 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
                     </div>
                   </div>
 
-                  {/* Big Color-Coded CTA Button */}
+                  {/* Big Color-Coded CTA Button with Interactive Animation */}
                   <div className="p-5 pt-0">
                     <button
                       type="button"
@@ -395,9 +311,10 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
                         e.stopPropagation();
                         onSelectScheme(scheme.id);
                       }}
-                      className={`w-full py-3 rounded-xl text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-1.5 ${btnClass}`}
+                      className={`w-full py-3.5 px-4 rounded-2xl text-white font-bold text-sm shadow-md hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 transform active:scale-95 hover:-translate-y-0.5 group-hover:brightness-105 ${btnClass}`}
                     >
                       <span>{t.checkEligibilityArrow}</span>
+                      <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform duration-200" />
                     </button>
                   </div>
                 </div>
@@ -406,15 +323,17 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
           </div>
         )}
 
-        {/* Pagination Dots at Bottom */}
+        {/* Pagination Dots at Bottom with Animated Width */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center space-x-2 mt-8">
             {Array.from({ length: totalPages }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentPage(i)}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  currentPage === i ? "bg-[#104E8B] w-6" : "bg-gray-300 hover:bg-gray-400"
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  currentPage === i 
+                    ? "bg-[#104E8B] w-8 shadow-xs" 
+                    : "bg-gray-300 hover:bg-gray-400 w-2.5"
                 }`}
                 aria-label={`Go to page ${i + 1}`}
               />
@@ -422,17 +341,6 @@ export const SchemeDirectory: React.FC<SchemeDirectoryProps> = ({
           </div>
         )}
       </div>
-
-      {/* Data Sources Modal */}
-      <DataSourcesModal
-        isOpen={isDataSourcesModalOpen}
-        onClose={() => setIsDataSourcesModalOpen(false)}
-        lang={lang}
-        onFilterByDomain={(dom) => {
-          setSelectedDomain(dom);
-          setCurrentPage(0);
-        }}
-      />
     </div>
   );
 };
