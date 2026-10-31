@@ -121,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Controls: High Contrast, Multilingual Indian Language Switcher, Login, Sign Up */}
+          {/* Right Controls: Multilingual Indian Language Switcher, Login, Sign Up */}
           <div className="hidden sm:flex items-center space-x-2">
 
 

@@ -57,6 +57,12 @@ export default function Home() {
       })
       .catch((err) => console.error("Error fetching schemes:", err));
 
+    // Purge any residual high-contrast classes or settings
+    if (typeof window !== "undefined") {
+      document.documentElement.classList.remove("high-contrast");
+      localStorage.removeItem("theme_high_contrast");
+    }
+
     // Load persisted language
     const savedLang = localStorage.getItem("ys_lang") as Language | null;
     if (savedLang) {

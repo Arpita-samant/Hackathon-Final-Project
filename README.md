@@ -68,7 +68,7 @@ India has a vast array of welfare, scholarship, and agricultural schemes designe
 
 ### 8. Accessibility & Security
 
-- **High Contrast Mode:** Built specifically for low vision and color-blind users.
+- **Multilingual Vernacular UI:** Full accessibility across 12 Indian official languages.
 - **Privacy & Security:** Strict data isolation and encryption safeguards for sensitive documents.
 
 ---
