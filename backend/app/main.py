@@ -32,6 +32,7 @@ from app.schemes_data import SCHEMES_DB
 from app.family_engine import evaluate_family_household
 from app.rag_engine import query_rag
 from app.scam_engine import analyze_scam_text
+from app.data_collector import DataCollectorService
 from app.database import (
     init_db,
     get_db,
@@ -76,11 +77,32 @@ def health_check():
 
 @app.get("/api/schemes", tags=["Schemes"])
 def list_all_schemes():
-    """Returns directory of all 16 official government welfare schemes."""
+    """Returns directory of all official government welfare & CSR schemes."""
     return {
         "count": len(SCHEMES_DB),
         "schemes": SCHEMES_DB
     }
+
+@app.get("/api/data-sources", tags=["Real-Time Data Ingestion"])
+def get_data_sources():
+    """
+    Returns registered data collection sources across 4 authoritative domains:
+    1. Government Welfare & Central Services (DBT Bharat, UMANG, State e-District)
+    2. Agriculture & Rural Development (Kisan Suvidha, Dept of Agriculture)
+    3. Education & Scholarships (National Scholarship Portal)
+    4. Non-Government (Buddy4Study, Vidyasaarathi, Corporate Foundations)
+    """
+    return {
+        "status": "success",
+        "sources": DataCollectorService.get_all_sources(),
+        "metrics": DataCollectorService.get_source_metrics()
+    }
+
+@app.post("/api/data-sources/sync", tags=["Real-Time Data Ingestion"])
+def trigger_data_sync():
+    """Triggers real-time re-synchronization with all 9 connected authoritative portals."""
+    result = DataCollectorService.sync_all_sources()
+    return result
 
 @app.post("/api/eligibility/evaluate", response_model=FamilyEvaluationResponse, tags=["Eligibility Engine"])
 def evaluate_eligibility(payload: EligibilityRequest):

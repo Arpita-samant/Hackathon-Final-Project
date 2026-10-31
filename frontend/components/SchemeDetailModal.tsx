@@ -109,10 +109,10 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
         className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-5xl w-full overflow-hidden relative my-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Title Bar with Close Button (Matching Image 3) */}
+        {/* Title Bar with Close Button */}
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/70">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#104E8B] inline-block" />
             <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate max-w-xl">
               {schemeName} - {t.detailedInfoTitle}
             </h2>
@@ -181,15 +181,15 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
             {/* Top-Right: Am I Eligible & Family Summary (Matching Image 3) */}
             <div className="lg:col-span-6 space-y-4">
               {/* Blue Header Card: Am I Eligible? */}
-              <div className="bg-[#1D4ED8] text-white p-4 rounded-2xl flex items-center space-x-3.5 shadow-md shadow-blue-500/20">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 border border-white/30">
-                  <ShieldCheck className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-r from-[#104E8B] to-[#0A2540] text-white p-4 rounded-2xl flex items-center space-x-3.5 shadow-md shadow-blue-900/20">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 border border-white/30 text-[#2BB656]">
+                  <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
                   <h4 className="text-base sm:text-lg font-extrabold leading-tight">
                     {t.amIEligibleTitle}
                   </h4>
-                  <p className="text-xs text-blue-100 mt-0.5">
+                  <p className="text-xs text-blue-200 mt-0.5">
                     {t.amIEligibleSubtitle}
                   </p>
                 </div>
@@ -285,20 +285,41 @@ export const SchemeDetailModal: React.FC<SchemeDetailModalProps> = ({
                 </div>
               </div>
 
-              {/* Box 3: Application Process */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                <div className="font-bold text-xs text-gray-900 mb-1.5">
-                  {t.applicationProcessTitle}
+              {/* Box 3: Verified Portal & Application Process */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-xs text-gray-900">
+                    {t.applicationProcessTitle}
+                  </div>
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-[#1E7E34] border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#2BB656]" />
+                    <span>{scheme.source_domain || "gov.in"}</span>
+                  </span>
                 </div>
-                <a
-                  href={scheme.direct_apply_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                >
-                  <span>{t.applicationLinkText}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <a
+                    href={scheme.direct_apply_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#104E8B] hover:text-[#0A2540] flex items-center space-x-1"
+                  >
+                    <span>{t.applicationLinkText} ({scheme.source_portal_name || "Official Portal"})</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+
+                  {scheme.guideline_pdf_url && (
+                    <a
+                      href={scheme.guideline_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-[#1E7E34] hover:text-[#2BB656] flex items-center space-x-1"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>{lang === "hi" ? "आधिकारिक दिशा-निर्देश (PDF)" : "Official Guidelines (PDF)"}</span>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 

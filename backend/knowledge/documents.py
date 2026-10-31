@@ -226,5 +226,85 @@ SCHEME_DOCUMENTS: List[Dict[str, Any]] = [
                 "content": "Beneficiaries can finance the remaining installation cost through collateral-free loans at repo rate + 0.5% (approx. 7% per annum) from public sector banks with minimal documentation. Net-metering enables selling surplus electricity back to the local power DISCOM."
             }
         ]
+    },
+    {
+        "doc_id": "doc_smam",
+        "scheme_name": "SMAM Agricultural Machinery Subsidy",
+        "source_url": "https://kisansuvidha.gov.in",
+        "last_updated": "2026-10-15",
+        "sections": [
+            {
+                "section_title": "Farm Machinery & Tractor Capital Subsidy",
+                "content": "Under Sub-Mission on Agricultural Mechanization (SMAM) monitored via Kisan Suvidha (kisansuvidha.gov.in) and DA&FW (agricoop.gov.in), farmers receive 40% to 50% capital subsidy on tractors, power tillers, rotavators, combine harvesters, and laser land levellers. Small, marginal, SC/ST, and women farmers are entitled to 50% financial assistance up to Rs. 1,00,000 for purchasing approved farm equipment."
+            },
+            {
+                "section_title": "Custom Hiring Centers (CHC)",
+                "content": "Rural entrepreneurs, farmer producer organizations (FPOs), and village cooperative societies can avail up to 40% capital subsidy (maximum Rs. 10 Lakhs) for establishing Custom Hiring Centers to rent farm machinery at affordable rates to neighboring marginal cultivators."
+            }
+        ]
+    },
+    {
+        "doc_id": "doc_uk_swarojgar",
+        "scheme_name": "Uttarakhand Mukhyamantri Swarojgar Yojana (MSY)",
+        "source_url": "https://eservices.uk.gov.in",
+        "last_updated": "2026-10-10",
+        "sections": [
+            {
+                "section_title": "Project Loan & Margin Money Subsidy",
+                "content": "Administered through Uttarakhand State e-District portal Apuni Sarkar (eservices.uk.gov.in), MSY promotes self-employment in manufacturing and service sectors. Maximum project cost is Rs. 25 Lakhs for manufacturing and Rs. 10 Lakhs for services. The Uttarakhand state government provides 15% to 25% margin money subsidy directly into the beneficiary's loan account."
+            },
+            {
+                "section_title": "Domicile & Application Guidelines",
+                "content": "Eligible applicants must be permanent residents / domiciles of Uttarakhand aged 18 to 65 years. No formal educational qualifications are mandated. Applications must be routed digitally through the Apuni Sarkar or MSY portal with Aadhaar, Mool Niwas domicile certificate, project summary (DPR), and bank account details."
+            }
+        ]
+    },
+    {
+        "doc_id": "doc_aicte_pragati",
+        "scheme_name": "AICTE Pragati Scholarship for Girls",
+        "source_url": "https://scholarships.gov.in",
+        "last_updated": "2026-10-01",
+        "sections": [
+            {
+                "section_title": "Technical Education Financial Award",
+                "content": "Verified on National Scholarship Portal (scholarships.gov.in), AICTE Pragati offers Rs. 50,000 per annum for female students admitted to 1st year Degree or Diploma engineering courses in AICTE-recognized institutions. The grant covers tuition reimbursement, laptops/desktops, stationery, books, and software licenses."
+            },
+            {
+                "section_title": "Merit & Income Ceiling",
+                "content": "Family income ceiling is Rs. 8,00,000 per annum. A maximum of two girls per family can be awarded. Candidates must possess Aadhaar-seeded active bank accounts with Direct Benefit Transfer (DBT) verification on the NSP portal."
+            }
+        ]
+    },
+    {
+        "doc_id": "doc_hdfc_ecss",
+        "scheme_name": "HDFC Bank Parivartan ECSS Scholarship",
+        "source_url": "https://www.buddy4study.com",
+        "last_updated": "2026-10-18",
+        "sections": [
+            {
+                "section_title": "Corporate CSR Educational Crisis Support",
+                "content": "Tracked via Buddy4Study (buddy4study.com) and HDFC Bank Parivartan, the Educational Crisis Support Scholarship (ECSS) provides up to Rs. 75,000 annual scholarship to meritorious school, college, and university students facing financial crises such as loss of earning parent, major medical emergency, or severe economic distress."
+            },
+            {
+                "section_title": "Eligibility & Selection Criteria",
+                "content": "Applicants must be enrolled from Class 1 to Post-Graduation in recognized institutions and have secured at least 55% marks in their previous annual exam. Annual family income must not exceed Rs. 2,50,000 per annum."
+            }
+        ]
+    },
+    {
+        "doc_id": "doc_vidyasaarathi",
+        "scheme_name": "NSDL Vidyasaarathi CSR Education Grant",
+        "source_url": "https://www.vidyasaarathi.co.in",
+        "last_updated": "2026-10-12",
+        "sections": [
+            {
+                "section_title": "Corporate Scholarship Disbursement",
+                "content": "Hosted by NSDL e-Governance on Vidyasaarathi (vidyasaarathi.co.in), this portal connects corporate CSR foundations (such as ACC, JSW, Tata Steel) with low-income students. Awards range from Rs. 20,000 to Rs. 50,000 per academic year for professional degree, diploma, and undergraduate students."
+            },
+            {
+                "section_title": "Documentation & Portal Application",
+                "content": "Students apply directly on vidyasaarathi.co.in by uploading Class 10/12 marksheets (minimum 60% marks), verified college fee structure, Tehsildar income certificate (under Rs. 5 Lakhs), and bank account passbook."
+            }
+        ]
     }
 ]
