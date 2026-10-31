@@ -23,6 +23,12 @@ import {
   UserPlus
 } from "lucide-react";
 import { Language, translations } from "@/lib/translations";
+import { 
+  sendFirebaseOtp, 
+  verifyFirebaseOtp, 
+  isFirebaseConfigured, 
+  type ConfirmationResult 
+} from "@/lib/firebase";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -56,6 +62,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [phone, setPhone] = useState("");
   const [occupation, setOccupation] = useState("Farmer");
   const [otpValues, setOtpValues] = useState<string[]>(["", "", "", "", "", ""]);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
   // Status & Feedback
   const [loading, setLoading] = useState(false);
@@ -106,6 +113,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMsg(lang === "hi" ? "कृपया 10 अंकों का वैध भारतीय मोबाइल नंबर दर्ज करें (उदा. 9876543210)।" : "Please enter a valid 10-digit Indian mobile number (e.g., 9876543210).");
       setLoading(false);
       return;
+    }
+
+    // 1. If Firebase credentials are configured, dispatch real SMS via Google Firebase Phone Auth
+    if (isFirebaseConfigured()) {
+      try {
+        const confirmation = await sendFirebaseOtp(cleanPhone, "recaptcha-container-auth-modal");
+        setConfirmationResult(confirmation);
+        setOtpValues(["", "", "", "", "", ""]);
+        setSmsSentNotice(
+          lang === "hi"
+            ? `📲 Google Firebase द्वारा आपके मोबाइल नंबर +91 ${cleanPhone} पर वास्तविक SMS OTP भेज दिया गया है। कृपया अपने इनबॉक्स में प्राप्त 6 अंकों का कोड दर्ज करें।`
+            : `📲 Real SMS OTP sent to +91 ${cleanPhone} via Google Firebase SMS. Please enter the 6-digit code received on your handset.`
+        );
+        setStep("otp");
+        setResendTimer(30);
+        setIsTimerActive(true);
+        setTimeout(() => {
+          otpInputRefs.current[0]?.focus();
+        }, 100);
+        setLoading(false);
+        return;
+      } catch (firebaseErr: any) {
+        console.warn("Firebase Phone Auth SMS error, falling back to local gateway:", firebaseErr);
+        // Continue to fallback below
+      }
     }
 
     try {
@@ -205,11 +237,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
 
     try {
+      // 1. If Firebase confirmationResult exists, verify the real SMS code with Firebase first
+      let firebaseUser: any = null;
+      let firebaseToken: string | undefined = undefined;
+
+      if (confirmationResult) {
+        try {
+          const fbRes = await verifyFirebaseOtp(confirmationResult, cleanOtp);
+          firebaseUser = fbRes.user;
+          firebaseToken = fbRes.idToken;
+        } catch (fbVerifyErr: any) {
+          console.error("Firebase OTP verification failed:", fbVerifyErr);
+          setErrorMsg(
+            lang === "hi"
+              ? "गलत या समाप्त हो चुका ओटीपी कोड। कृपया अपने मोबाइल पर आया सही 6-अंकीय कोड दर्ज करें।"
+              : "Invalid verification code. Please check your phone SMS and enter the correct 6-digit OTP."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       let endpoint = "/api/auth/verify-and-register";
       let payload: any = {
         phone: cleanPhone,
         otp: cleanOtp,
         otp_code: cleanOtp,
+        firebase_token: firebaseToken,
         name: name.trim() || "Citizen User",
         occupation_category: occupation,
         state: "All-India",
@@ -223,6 +277,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           phone: cleanPhone,
           otp: cleanOtp,
           otp_code: cleanOtp,
+          firebase_token: firebaseToken,
         };
       }
 
@@ -239,16 +294,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const data = await res.json();
         if (res.ok && data && data.id) {
           userData = data;
-          authToken = data.auth_token || ("token_" + Date.now());
+          authToken = data.auth_token || firebaseToken || ("token_" + Date.now());
         } else {
           let errDetail = data?.detail;
           if (Array.isArray(errDetail)) {
             errDetail = errDetail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
           }
-          throw new Error(errDetail || "Invalid verification code.");
+          if (!firebaseUser) {
+            throw new Error(errDetail || "Invalid verification code.");
+          }
         }
       } catch (netErr: any) {
-        if (netErr.message && netErr.message.includes("Invalid")) {
+        if (!firebaseUser && netErr.message && netErr.message.includes("Invalid")) {
           throw netErr;
         }
         console.warn("Backend fetch failed, using fallback:", netErr);
@@ -272,7 +329,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             ration_card: { uploaded: false, status: "Not Uploaded" },
             income_certificate: { uploaded: false, status: "Not Uploaded" },
           },
-          auth_token: "token_" + Date.now(),
+          auth_token: firebaseToken || ("token_" + Date.now()),
           family_members_count: 1,
         };
         authToken = userData.auth_token;
@@ -298,6 +355,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-lg w-full overflow-hidden relative my-6"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Invisible Firebase Recaptcha Container */}
+        <div id="recaptcha-container-auth-modal"></div>
         {/* Top Header with Brand Theme */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/70">
           <div className="flex items-center space-x-2.5">
