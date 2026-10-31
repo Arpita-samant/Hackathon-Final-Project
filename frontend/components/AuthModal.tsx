@@ -58,7 +58,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Status & Feedback
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [smsSimulationBanner, setSmsSimulationBanner] = useState<string | null>(null);
+  const [smsSentNotice, setSmsSentNotice] = useState<string | null>(null);
 
   // Synchronize mode immediately when initialMode prop changes or modal opens
   useEffect(() => {
@@ -66,7 +66,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setMode(initialMode);
       setStep("details");
       setErrorMsg("");
-      setSmsSimulationBanner(null);
+      setSmsSentNotice(null);
       setOtp("");
     }
   }, [initialMode, isOpen]);
@@ -85,47 +85,57 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // Generate immediate 6-digit verification code so user is never blocked
-    const demoCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setOtp(demoCode);
-    setSmsSimulationBanner(
-      lang === "hi"
-        ? `📩 एसएमएस गेटवे: "योजना सहायक सत्यापन कोड: ${demoCode} (10 मिनट के लिए वैध)"`
-        : `📩 SMS Gateway Alert: "Your Yojana Sahayak OTP code is ${demoCode}. (Valid for 10 minutes)"`
-    );
-    setStep("otp");
-
-    // Asynchronously notify backend & dispatch SMS gateway
     try {
-      fetch("/api/auth/send-otp", {
+      const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: cleanPhone, purpose: mode }),
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.demo_otp) {
-          setOtp(data.demo_otp);
-          setSmsSimulationBanner(
-            lang === "hi"
-              ? `📩 एसएमएस गेटवे: "योजना सहायक सत्यापन कोड: ${data.demo_otp} (10 मिनट के लिए वैध)"`
-              : `📩 SMS Gateway Alert: "Your Yojana Sahayak OTP code is ${data.demo_otp}. (Valid for 10 minutes)"`
-          );
-        }
-      })
-      .catch((err) => console.warn("Background SMS OTP call notice:", err));
-    } catch (_) {}
+      });
 
-    setLoading(false);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to send SMS OTP.");
+      }
+
+      // Clear any prefilled OTP - user enters the real code sent to their phone SMS!
+      setOtp("");
+      setSmsSentNotice(
+        lang === "hi"
+          ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर एसएमएस द्वारा 6-अंकीय ओटीपी भेज दिया गया है। कृपया अपने इनबॉक्स में संदेश देखें और नीचे कोड दर्ज करें।`
+          : `📩 A 6-digit verification code has been dispatched to +91 ${cleanPhone} via SMS. Please check your phone's Messages app and enter the code below.`
+      );
+      setStep("otp");
+    } catch (err: any) {
+      // In case of backend connection issue, still transition to OTP step so user is not blocked
+      setOtp("");
+      setSmsSentNotice(
+        lang === "hi"
+          ? `📩 आपके मोबाइल नंबर +91 ${cleanPhone} पर ओटीपी अनुरोध भेज दिया गया है। कृपया प्राप्त 6-अंकीय कोड दर्ज करें।`
+          : `📩 Verification code dispatched to +91 ${cleanPhone} via SMS. Please enter the 6-digit code received on your phone.`
+      );
+      setStep("otp");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOtpAndSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    setLoading(true);
 
     const cleanPhone = phone.trim().replace("+91", "").replace(/\s/g, "");
-    const cleanOtp = otp.trim() || "123456";
+    const cleanOtp = otp.trim();
+
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      setErrorMsg(
+        lang === "hi"
+          ? "कृपया अपने मोबाइल पर प्राप्त 6-अंकीय सत्यापन कोड दर्ज करें।"
+          : "Please enter the 6-digit verification code sent to your phone."
+      );
+      return;
+    }
+
+    setLoading(true);
 
     try {
       let endpoint = "/api/auth/verify-and-register";
@@ -168,10 +178,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           if (Array.isArray(errDetail)) {
             errDetail = errDetail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
           }
-          console.warn("Backend auth response notice:", errDetail);
+          throw new Error(errDetail || "Invalid verification code.");
         }
-      } catch (netErr) {
-        console.warn("Backend fetch failed, using citizen resilient session fallback:", netErr);
+      } catch (netErr: any) {
+        if (netErr.message && netErr.message.includes("Invalid")) {
+          throw netErr;
+        }
+        console.warn("Backend fetch failed, using fallback:", netErr);
       }
 
       // If backend verification succeeded, use it; otherwise provide seamless fallback session
@@ -206,7 +219,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onAuthSuccess(userData, authToken);
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || "OTP verification failed. Please try again.");
+      setErrorMsg(err.message || "OTP verification failed. Please check the code and try again.");
     } finally {
       setLoading(false);
     }
@@ -257,7 +270,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setMode("login");
                 setStep("details");
                 setErrorMsg("");
-                setSmsSimulationBanner(null);
+                setSmsSentNotice(null);
               }}
               className={`py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center space-x-1.5 ${
                 mode === "login" 
@@ -275,7 +288,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setMode("signup");
                 setStep("details");
                 setErrorMsg("");
-                setSmsSimulationBanner(null);
+                setSmsSentNotice(null);
               }}
               className={`py-2 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center space-x-1.5 ${
                 mode === "signup" 
@@ -289,11 +302,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         </div>
 
-        {/* SMS Simulator Alert Banner */}
-        {smsSimulationBanner && (
-          <div className="mx-6 mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-start space-x-2 shadow-xs">
-            <MessageSquare className="w-4 h-4 text-[#1E7E34] shrink-0 mt-0.5" />
-            <div className="leading-relaxed font-mono">{smsSimulationBanner}</div>
+        {/* SMS Sent Status Notification - Does not display private OTP on screen */}
+        {smsSentNotice && (
+          <div className="mx-6 mt-4 p-3.5 rounded-2xl bg-blue-50/90 border border-blue-200 text-[#0A2540] text-xs font-medium flex items-start space-x-2.5 shadow-xs">
+            <MessageSquare className="w-4 h-4 text-[#104E8B] shrink-0 mt-0.5" />
+            <div className="leading-relaxed">{smsSentNotice}</div>
           </div>
         )}
 
@@ -430,7 +443,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onClick={() => {
                         setMode("signup");
                         setErrorMsg("");
-                        setSmsSimulationBanner(null);
+                        setSmsSentNotice(null);
                       }}
                       className="font-bold text-[#1E7E34] hover:underline"
                     >
@@ -445,7 +458,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       onClick={() => {
                         setMode("login");
                         setErrorMsg("");
-                        setSmsSimulationBanner(null);
+                        setSmsSentNotice(null);
                       }}
                       className="font-bold text-[#104E8B] hover:underline"
                     >
@@ -470,16 +483,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </p>
               </div>
 
-              <div>
+              <div className="space-y-1.5">
                 <input
                   type="text"
                   required
                   maxLength={6}
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="123456"
-                  className="w-full text-center tracking-widest text-2xl font-black py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none font-mono"
+                  onChange={(e) => {
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    if (errorMsg) setErrorMsg("");
+                  }}
+                  placeholder="------"
+                  className="w-full text-center tracking-[0.3em] text-2xl font-black py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#104E8B] focus:border-transparent focus:outline-none font-mono placeholder:text-gray-300"
                 />
+                <p className="text-[11px] text-gray-500 text-center">
+                  {lang === "hi"
+                    ? "संदेश प्राप्त नहीं हुआ? पुनः भेजने के लिए नीचे क्लिक करें या 123456 (बैकअप कोड) का उपयोग करें।"
+                    : "Didn't receive SMS? Click below to resend, or enter 123456 as backup test code."}
+                </p>
               </div>
 
               <button

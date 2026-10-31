@@ -343,8 +343,7 @@ def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
     return {
         "status": "success",
         "message": f"Verification code sent via SMS to {masked_phone}",
-        "phone": clean_phone,
-        "demo_otp": otp_code  # Provided for seamless hackathon testing & verification
+        "phone": clean_phone
     }
 
 @app.post("/api/auth/verify-and-register", response_model=UserProfileResponse, tags=["Citizen Auth"])
