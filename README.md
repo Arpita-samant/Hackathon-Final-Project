@@ -163,3 +163,19 @@ Data collection Websites
 1. **Document Collection:** 10 to 20 foundational public scheme documents (PM-KISAN, Ayushman Bharat, major scholarships).
 2. **RAG QA Chatbot:** Retrieval pipeline that fetches passages, forbids hallucinations, answers in Hindi/English, and cites sources.
 3. **Eligibility Questionnaire:** Interactive questionnaire capturing age, income, occupation, and state to recommend matching benefits.
+
+## 🚀 Option C: Manual Startup (Two Terminals)
+
+**Terminal 1 – Backend**
+```bash
+cd backend
+.\venv\Scripts\uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+
+Terminal 2 – Frontend
+cd frontend
+npm run dev
+
+
+🌐 Project URLs
+- Frontend: http://localhost:3000
