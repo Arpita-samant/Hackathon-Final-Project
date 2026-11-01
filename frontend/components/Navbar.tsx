@@ -7,8 +7,10 @@ import {
   X,
   User,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Bell
 } from "lucide-react";
+import { NotificationDrawer } from "@/components/NotificationDrawer";
 
 interface NavbarProps {
   currentTab: string;
@@ -17,6 +19,7 @@ interface NavbarProps {
   onLangChange: (lang: Language) => void;
   userName?: string;
   userOccupation?: string;
+  userEmail?: string;
   isLoggedIn?: boolean;
   onOpenLogin?: () => void;
   onOpenSignup?: () => void;
@@ -45,6 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLangChange,
   userName = "Citizen User",
   userOccupation = "Farmer",
+  userEmail = "",
   isLoggedIn = false,
   onOpenLogin,
   onOpenSignup,
@@ -52,6 +56,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [isNotifDrawerOpen, setIsNotifDrawerOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  React.useEffect(() => {
+    fetch("/api/notifications")
+      .then((r) => r.json())
+      .then((d) => setUnreadNotifCount(d.unread_count || 0))
+      .catch(() => {});
+  }, []);
   const t = translations[lang] || translations.en;
 
   const currentLangObj = INDIAN_LANGUAGES.find((l) => l.code === lang) || INDIAN_LANGUAGES[0];
@@ -124,6 +137,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Controls: Multilingual Indian Language Switcher, Login, Sign Up */}
           <div className="hidden sm:flex items-center space-x-2">
 
+            {/* Notification Bell Icon Before Language Selection */}
+            <button
+              type="button"
+              onClick={() => setIsNotifDrawerOpen(true)}
+              className="relative p-2 rounded-xl border border-gray-200 text-gray-700 hover:text-[#104E8B] hover:bg-blue-50/70 transition shadow-2xs group"
+              title="Welfare & Eligibility Alerts (भविष्य पात्रता, समयसीमा, आवेदन स्थिति)"
+              aria-label="View notifications"
+            >
+              <Bell className="w-4 h-4 group-hover:scale-105 transition text-gray-700 hover:text-[#104E8B]" />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white shadow-xs animate-pulse">
+                  {unreadNotifCount}
+                </span>
+              )}
+            </button>
 
             {/* Language Selector Dropdown - Global icon removed, Dropdown chevron icon used */}
             <div className="relative">
@@ -212,6 +240,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center space-x-2">
+            {/* Mobile Notification Bell Icon */}
+            <button
+              type="button"
+              onClick={() => setIsNotifDrawerOpen(true)}
+              className="relative p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition shadow-2xs mr-1"
+              title="Welfare & Eligibility Alerts"
+              aria-label="View notifications"
+            >
+              <Bell className="w-4 h-4 text-gray-700" />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white shadow-xs animate-pulse">
+                  {unreadNotifCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-1.5 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -222,6 +266,25 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Notification Drawer Modal */}
+      <NotificationDrawer
+        isOpen={isNotifDrawerOpen}
+        onClose={() => {
+          setIsNotifDrawerOpen(false);
+          fetch("/api/notifications")
+            .then((r) => r.json())
+            .then((d) => setUnreadNotifCount(d.unread_count || 0))
+            .catch(() => {});
+        }}
+        lang={lang}
+        userEmail={userEmail}
+        userName={userName}
+        onNavigateTab={(tab) => {
+          setIsNotifDrawerOpen(false);
+          handleSelectTab(tab);
+        }}
+      />
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (

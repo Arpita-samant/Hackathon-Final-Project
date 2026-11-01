@@ -223,3 +223,35 @@ class AIHealthResponse(BaseModel):
     indexed_schemes_count: int
     supported_languages: Dict[str, str]
 
+class NotificationItemSchema(BaseModel):
+    id: str
+    type: str  # future_eligibility, deadline_reminder, status_update
+    title: str
+    message: str
+    scheme_name: str
+    scheme_id: Optional[str] = None
+    official_url: str
+    urgency: str = "normal"
+    days_remaining: Optional[int] = None
+    status_stage: Optional[str] = None
+    beneficiary_name: Optional[str] = None
+    created_at: str
+    is_read: bool = False
+
+class GetNotificationsResponse(BaseModel):
+    unread_count: int
+    total_count: int
+    notifications: List[NotificationItemSchema]
+
+class SendNotificationEmailRequest(BaseModel):
+    email: str
+    recipient_name: Optional[str] = "Citizen"
+
+class SendNotificationEmailResponse(BaseModel):
+    success: bool
+    message: str
+    recipient: str
+
+class MarkNotificationReadRequest(BaseModel):
+    notification_id: str
+

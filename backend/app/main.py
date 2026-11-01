@@ -39,6 +39,11 @@ from app.models import (
     VoiceTranscribeRequest,
     VoiceTranscribeResponse,
     AIHealthResponse,
+    NotificationItemSchema,
+    GetNotificationsResponse,
+    SendNotificationEmailRequest,
+    SendNotificationEmailResponse,
+    MarkNotificationReadRequest,
     SendEmailOTPRequest,
     VerifyEmailOTPRequest,
     RegisterRequest,
@@ -55,6 +60,7 @@ from app.rag_engine import query_rag, clean_text_for_voice, detect_indian_langua
 from app.scam_engine import analyze_scam_text
 from app.data_collector import DataCollectorService
 from app.email_service import send_email_otp
+from app.notification_service import get_all_notifications, mark_notification_as_read, send_notification_email
 from app.otp_service import generate_and_store_otp, verify_stored_otp
 
 from app.user_store import (
@@ -488,6 +494,58 @@ def get_current_user(
             detail="Authentication required. Please sign in to access your profile."
         )
     return user
+
+
+@app.get("/api/notifications", response_model=GetNotificationsResponse, tags=["Notifications"])
+def get_user_notifications():
+    """
+    Retrieves real-time citizen welfare notifications:
+    1. Future Eligibility Alerts (overcoming near-miss boundary like turning 18 or new FY)
+    2. Deadline Reminders (urgent countdowns for approaching closing dates)
+    3. Application Status Updates (progress tracking: Documents Verified, Pending Approval)
+    """
+    notifs = get_all_notifications()
+    unread = sum(1 for n in notifs if not n.get("is_read", False))
+    return GetNotificationsResponse(
+        unread_count=unread,
+        total_count=len(notifs),
+        notifications=notifs
+    )
+
+@app.post("/api/notifications/mark-read", tags=["Notifications"])
+def mark_read(payload: MarkNotificationReadRequest):
+    """Marks a single notification or all notifications as read."""
+    success = mark_notification_as_read(payload.notification_id)
+    notifs = get_all_notifications()
+    unread = sum(1 for n in notifs if not n.get("is_read", False))
+    return {
+        "success": success,
+        "unread_count": unread,
+        "notifications": notifs
+    }
+
+@app.post("/api/notifications/send-email", response_model=SendNotificationEmailResponse, tags=["Notifications"])
+def dispatch_notifications_email(payload: SendNotificationEmailRequest):
+    """
+    Sends active future eligibility alerts, urgent deadlines, and application status updates
+    directly to the citizen's Gmail address using Gmail SMTP.
+    """
+    clean_email = payload.email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise HTTPException(status_code=400, detail="A valid recipient email address is required.")
+
+    notifs = get_all_notifications()
+    recipient = payload.recipient_name or "Citizen"
+    success, msg = send_notification_email(clean_email, notifs, recipient)
+
+    if not success and "Gmail SMTP not configured" in msg:
+        raise HTTPException(status_code=500, detail=msg)
+
+    return SendNotificationEmailResponse(
+        success=success,
+        message=msg,
+        recipient=clean_email
+    )
 
 @app.post("/api/auth/send-email-otp", tags=["Citizen Auth"])
 def send_email_otp_endpoint(payload: SendEmailOTPRequest):
