@@ -168,3 +168,58 @@ class DocumentUploadRequest(BaseModel):
     doc_type: str = Field(..., description="aadhaar, pan, ration_card, income_certificate, caste_certificate, or student_id")
     file_name: str
     file_base64: Optional[str] = None
+
+class SearchSchemesRequest(BaseModel):
+    query: Optional[str] = ""
+    category: Optional[str] = None
+    state: Optional[str] = None
+    limit: int = 10
+
+class SearchSchemesResultItem(BaseModel):
+    id: str
+    name: str
+    category: str
+    beneficiary_type: str
+    description: str
+    official_website: str
+    benefits_summary: Optional[str] = None
+    state: Optional[str] = None
+    score: Optional[float] = None
+
+class SearchSchemesResponse(BaseModel):
+    count: int
+    query: str
+    category: Optional[str] = None
+    schemes: List[SearchSchemesResultItem]
+
+class VoiceSpeakRequest(BaseModel):
+    text: str
+    language: Optional[str] = "en"
+
+class VoiceSpeakResponse(BaseModel):
+    clean_text: str
+    language: str
+    voice_locale: str
+    char_count: int
+
+class VoiceTranscribeRequest(BaseModel):
+    text: Optional[str] = None
+    audio_base64: Optional[str] = None
+    language: Optional[str] = "en"
+
+class VoiceTranscribeResponse(BaseModel):
+    transcription: str
+    detected_language: str
+    language_name: str
+    confidence: float
+
+class AIHealthResponse(BaseModel):
+    status: str
+    service: str
+    rag_engine: str
+    gemini_configured: bool
+    groq_configured: bool
+    indexed_documents_count: int
+    indexed_schemes_count: int
+    supported_languages: Dict[str, str]
+

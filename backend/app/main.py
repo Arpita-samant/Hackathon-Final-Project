@@ -31,6 +31,14 @@ from app.models import (
     ChatResponse,
     ScamCheckRequest,
     ScamCheckResponse,
+    SearchSchemesRequest,
+    SearchSchemesResponse,
+    SearchSchemesResultItem,
+    VoiceSpeakRequest,
+    VoiceSpeakResponse,
+    VoiceTranscribeRequest,
+    VoiceTranscribeResponse,
+    AIHealthResponse,
     SendEmailOTPRequest,
     VerifyEmailOTPRequest,
     RegisterRequest,
@@ -43,7 +51,7 @@ from app.models import (
 )
 from app.schemes_data import SCHEMES_DB
 from app.family_engine import evaluate_family_household
-from app.rag_engine import query_rag
+from app.rag_engine import query_rag, clean_text_for_voice, detect_indian_language, LANGUAGE_NAMES, retriever, get_llm_keys
 from app.scam_engine import analyze_scam_text
 from app.data_collector import DataCollectorService
 from app.email_service import send_email_otp
@@ -171,6 +179,128 @@ def chat_assistant(payload: ChatRequest):
 
     chat_result = query_rag(payload)
     return chat_result
+
+
+@app.post("/api/ai/chat", response_model=ChatResponse, tags=["RAG Multilingual Assistant"])
+def chat_assistant_alias(payload: ChatRequest):
+    """
+    Direct alias to /api/chat. Provides structured, grounded welfare scheme answers
+    across all 12 Indian languages using official government sources.
+    """
+    return chat_assistant(payload)
+
+@app.get("/api/ai/health", response_model=AIHealthResponse, tags=["AI Assistant"])
+def get_ai_health():
+    """Returns AI Assistant status, connected RAG indices, and language configurations."""
+    gemini_key, openai_key = get_llm_keys()
+    provider = "Gemini Flash" if gemini_key else ("OpenAI" if openai_key else "Grounded Multilingual Synthesizer")
+    return AIHealthResponse(
+        status="healthy",
+        service="Yojana Sahayak Grounded AI Engine",
+        rag_engine=f"Dual-Source Vector Retriever ({provider})",
+        gemini_configured=bool(gemini_key),
+        groq_configured=bool(openai_key),
+        indexed_documents_count=len(retriever.chunks),
+        indexed_schemes_count=len(SCHEMES_DB),
+        supported_languages=LANGUAGE_NAMES
+    )
+
+@app.post("/api/ai/search-schemes", response_model=SearchSchemesResponse, tags=["AI Assistant"])
+def search_schemes_ai(payload: SearchSchemesRequest):
+    """
+    Searches the scheme knowledge base by keyword, category, and state.
+    Returns high-confidence matching schemes with official portal links.
+    """
+    q = (payload.query or "").strip().lower()
+    cat = (payload.category or "").strip().lower()
+    st = (payload.state or "").strip().lower()
+    
+    matched = []
+    for s in SCHEMES_DB:
+        score = 0.0
+        # Category filter
+        s_cat = s.get("category", "").lower()
+        if cat and cat not in s_cat:
+            continue
+            
+        # State filter (Uttarakhand or Central or all)
+        s_desc = (s.get("description", "") + " " + s.get("name", "")).lower()
+        if st and st != "all" and st != "india":
+            if st not in s_desc:
+                continue
+
+        # Text query matching
+        if q:
+            name_lower = s.get("name", "").lower()
+            desc_lower = s.get("description", "").lower()
+            ben_lower = s.get("benefits_summary", "").lower()
+            if q in name_lower:
+                score += 3.0
+            if q in desc_lower:
+                score += 1.5
+            if q in ben_lower:
+                score += 1.0
+            for kw in q.split():
+                if len(kw) > 2 and (kw in name_lower or kw in desc_lower):
+                    score += 0.5
+        else:
+            score = 1.0
+            
+        if score > 0:
+            matched.append(SearchSchemesResultItem(
+                id=s.get("id", ""),
+                name=s.get("name", ""),
+                category=s.get("category", "General"),
+                beneficiary_type=s.get("beneficiary_type", "Citizen"),
+                description=s.get("description", ""),
+                official_website=s.get("official_website", "https://www.myscheme.gov.in/"),
+                benefits_summary=s.get("benefits_summary", ""),
+                state="Uttarakhand" if "uttarakhand" in s_desc else "Central",
+                score=round(score, 2)
+            ))
+            
+    # Sort by score descending
+    matched.sort(key=lambda x: x.score or 0.0, reverse=True)
+    return SearchSchemesResponse(
+        count=len(matched[:payload.limit]),
+        query=payload.query or "",
+        category=payload.category,
+        schemes=matched[:payload.limit]
+    )
+
+@app.post("/api/voice/speak", response_model=VoiceSpeakResponse, tags=["Voice Assistant"])
+def clean_for_speech(payload: VoiceSpeakRequest):
+    """
+    Pre-processes assistant response text for high-fidelity speech synthesis.
+    Strips markdown asterisks, raw URLs, headers, and code delimiters.
+    Returns cleaned phonetic text and matching Indian speech locale.
+    """
+    clean = clean_text_for_voice(payload.text)
+    lang = (payload.language or "en").lower().split("-")[0]
+    speech_locale = f"{lang}-IN" if lang != "en" else "en-IN"
+    return VoiceSpeakResponse(
+        clean_text=clean,
+        language=lang,
+        voice_locale=speech_locale,
+        char_count=len(clean)
+    )
+
+@app.post("/api/voice/transcribe", response_model=VoiceTranscribeResponse, tags=["Voice Assistant"])
+def transcribe_speech(payload: VoiceTranscribeRequest):
+    """
+    Validates, normalizes, and detects language of user speech transcript.
+    Supports browser speech recognition payloads and returns detected language info.
+    """
+    raw_text = (payload.text or "").strip()
+    detected = detect_indian_language(raw_text) or payload.language or "en"
+    lang_name = LANGUAGE_NAMES.get(detected, "English (India)")
+    return VoiceTranscribeResponse(
+        transcription=raw_text,
+        detected_language=detected,
+        language_name=lang_name,
+        confidence=0.95 if len(raw_text) > 3 else 0.50
+    )
+
 
 @app.post("/api/scam-check", response_model=ScamCheckResponse, tags=["Anti-Scam Shield"])
 def verify_scam(payload: ScamCheckRequest, db: Session = Depends(get_db)):

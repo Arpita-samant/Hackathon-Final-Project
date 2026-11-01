@@ -216,7 +216,7 @@ export default function Home() {
 
         {/* VIEW 5: VOICE ASSISTANT */}
         {currentTab === "voice" && (
-          <VoiceAssistantView lang={lang} />
+          <VoiceAssistantView lang={lang} onNavigateTab={handleTabChange} />
         )}
 
         {/* VIEW 6: FAMILY MEMBERS */}

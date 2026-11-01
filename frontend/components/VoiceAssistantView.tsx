@@ -11,6 +11,10 @@ import {
   Activity, 
   ChevronDown, 
   Volume2, 
+  VolumeX,
+  RotateCcw,
+  MessageSquare,
+  AlertCircle,
   Sparkles,
   ExternalLink,
   Send,
@@ -21,6 +25,7 @@ import {
 
 interface VoiceAssistantViewProps {
   lang: Language;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export interface VoiceLanguageOption {
@@ -208,7 +213,7 @@ const SAMPLE_PROMPTS: Record<string, string[]> = {
   ],
 };
 
-export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) => {
+export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang, onNavigateTab }) => {
   const t = translations[lang] || translations.en;
   
   // Selected option from dropdown ("auto", "hi-IN", "bn-IN", etc.)
@@ -220,6 +225,8 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
   const [ttsNotice, setTtsNotice] = useState<string | null>(null);
 
   const [transcribedText, setTranscribedText] = useState(
@@ -339,6 +346,7 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
 
     recognition.onstart = () => {
       setIsListening(true);
+      setMicError(null);
       transcriptRef.current = "";
       setTranscribedText(
         LISTENING_TEXTS[selectedVoiceLang === "auto" ? "auto" : activeLangCode] || LISTENING_TEXTS["en"]
@@ -365,6 +373,17 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
     recognition.onerror = (err: any) => {
       console.warn("Speech recognition error:", err);
       setIsListening(false);
+      if (err.error === "not-allowed" || err.error === "service-not-allowed") {
+        setMicError(
+          lang === "hi"
+            ? "माइक्रोफ़ोन की अनुमति अस्वीकृत है। कृपया अपने ब्राउज़र के एड्रेस बार में माइक्रोफ़ोन आइकन पर क्लिक करें और 'Allow' चुनें।"
+            : "Microphone access was blocked. Please click the camera/microphone icon in your browser address bar to allow microphone access, then try again."
+        );
+      } else if (err.error === "no-speech") {
+        // Normal silence timeout
+      } else {
+        setMicError(`Voice input notice: ${err.error || "Unable to capture speech"}.`);
+      }
     };
 
     recognition.onend = () => {
@@ -379,12 +398,32 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
   };
 
   // Text to Speech in the chosen/detected Indian language
+  
+  // Clean markdown syntax, links, and code symbols for natural voice speech
+  const cleanForSpeech = (rawText: string): string => {
+    let t = rawText;
+    // Replace markdown links [Title](URL) with just Title
+    t = t.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    // Remove bare URLs
+    t = t.replace(/https?:\/\/\S+/g, "");
+    // Remove markdown headers ###, **, *, _, #, `, >, ~
+    t = t.replace(/[#*`_~>]/g, "");
+    // Remove emojis or special symbols that speech synthesizers read aloud
+    t = t.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "");
+    // Normalize extra whitespace and newlines
+    t = t.replace(/\s+/g, " ").trim();
+    return t;
+  };
+
   const speakAloud = (textToSpeak: string, forcedLang?: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
 
+    if (isMuted) return;
+
     const langTarget = forcedLang || activeLangCode || "en";
-    const cleanText = textToSpeak.replace(/[*_#`[\]()]/g, "");
+    const cleanText = cleanForSpeech(textToSpeak);
+    if (!cleanText) return;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const speechCode = `${langTarget}-IN`;
@@ -454,8 +493,20 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
           </div>
         </div>
 
-        {/* Language Controls */}
+        {/* Top Action Controls: Language & Switch to Chatbot */}
         <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
+          {onNavigateTab && (
+            <button
+              type="button"
+              onClick={() => onNavigateTab("chat")}
+              className="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#104E8B] border border-blue-200 text-xs font-bold shadow-2xs transition flex items-center space-x-1.5"
+              title="Switch to AI Chatbot"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-[#104E8B]" />
+              <span className="hidden sm:inline">{lang === "hi" ? "चैटबॉट खोलें" : "Open Chatbot"}</span>
+            </button>
+          )}
+
           <div className="relative">
             <select
               value={selectedVoiceLang}
@@ -481,6 +532,90 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
           </div>
         </div>
       </div>
+
+      {/* LIVE ASSISTANT STATUS & MUTE CONTROLS */}
+      <div className="pt-3 pb-1 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center space-x-2">
+          {/* Real-Time State Badge */}
+          <div className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs border ${
+            isListening
+              ? "bg-red-50 text-red-700 border-red-300 animate-pulse"
+              : isThinking
+              ? "bg-amber-50 text-amber-700 border-amber-300 animate-pulse"
+              : isPlaying
+              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+              : "bg-blue-50 text-blue-700 border-blue-200"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              isListening ? "bg-red-600 animate-ping" : isThinking ? "bg-amber-500 animate-pulse" : isPlaying ? "bg-emerald-600 animate-bounce" : "bg-blue-600"
+            }`} />
+            <span>
+              {isListening
+                ? (lang === "hi" ? "सुन रहा हूँ (Listening...)" : "Listening...")
+                : isThinking
+                ? (lang === "hi" ? "खोज रहा हूँ (Processing...)" : "Processing...")
+                : isPlaying
+                ? (lang === "hi" ? "बोल रहा हूँ (Speaking...)" : "Speaking...")
+                : (lang === "hi" ? "तैयार (Ready)" : "Ready")}
+            </span>
+          </div>
+
+          <span className="text-[11px] text-gray-500 font-medium">
+            {currentLangMeta.label}
+          </span>
+        </div>
+
+        {/* Mute / Unmute Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const nextMuted = !isMuted;
+            setIsMuted(nextMuted);
+            if (nextMuted && isPlaying) {
+              window.speechSynthesis?.cancel();
+              setIsPlaying(false);
+            }
+          }}
+          className={`px-3 py-1 rounded-xl text-xs font-bold border transition flex items-center space-x-1.5 ${
+            isMuted
+              ? "bg-gray-100 text-gray-600 border-gray-300"
+              : "bg-white text-gray-800 border-gray-200 hover:bg-gray-50 shadow-2xs"
+          }`}
+          title={isMuted ? "Unmute Voice" : "Mute Voice"}
+        >
+          {isMuted ? (
+            <>
+              <VolumeX className="w-3.5 h-3.5 text-gray-500" />
+              <span>{lang === "hi" ? "म्यूट (Muted)" : "Muted"}</span>
+            </>
+          ) : (
+            <>
+              <Volume2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{lang === "hi" ? "ध्वनि चालू" : "Voice On"}</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* MICROPHONE ERROR BANNER */}
+      {micError && (
+        <div className="mt-3 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start justify-between gap-3 shadow-xs animate-in fade-in">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold">{lang === "hi" ? "माइक्रोफ़ोन सूचना:" : "Microphone Notice:"}</span>{" "}
+              <span>{micError}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMicError(null)}
+            className="text-xs font-bold text-rose-700 hover:text-rose-900 underline shrink-0"
+          >
+            {lang === "hi" ? "हटाएं" : "Dismiss"}
+          </button>
+        </div>
+      )}
 
       {/* TOP SPEECH BUBBLE */}
       <div className="my-5 flex justify-start items-start">
@@ -537,27 +672,40 @@ export const VoiceAssistantView: React.FC<VoiceAssistantViewProps> = ({ lang }) 
               )}
             </div>
 
-            {/* Play / Voice Button */}
-            <button
-              onClick={handlePlayVoice}
-              className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition flex items-center space-x-1.5 shrink-0 shadow-2xs ${
-                isPlaying
-                  ? "bg-red-600 text-white border-red-600 animate-pulse"
-                  : "bg-white text-gray-800 border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              {isPlaying ? (
-                <>
-                  <Square className="w-3.5 h-3.5 fill-current" />
-                  <span>{t.voiceStop || "Stop"}</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>{t.voicePlayVoice || "Play Voice"}</span>
-                </>
-              )}
-            </button>
+            {/* Voice Control Buttons: Replay & Play/Stop */}
+            <div className="flex items-center space-x-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => speakAloud(assistantResponse, activeLangCode)}
+                disabled={isPlaying}
+                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold shadow-2xs transition flex items-center space-x-1 disabled:opacity-50"
+                title="Listen again"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                <span className="hidden sm:inline">{lang === "hi" ? "पुनः सुनें" : "Replay"}</span>
+              </button>
+
+              <button
+                onClick={handlePlayVoice}
+                className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition flex items-center space-x-1.5 shadow-2xs ${
+                  isPlaying
+                    ? "bg-red-600 text-white border-red-600 animate-pulse"
+                    : "bg-white text-gray-800 border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                {isPlaying ? (
+                  <>
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span>{t.voiceStop || "Stop"}</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>{t.voicePlayVoice || "Play Voice"}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

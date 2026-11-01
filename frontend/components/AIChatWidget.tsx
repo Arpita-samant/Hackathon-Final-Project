@@ -18,7 +18,11 @@ import {
   ExternalLink,
   CheckCircle2,
   AlertTriangle,
-  X
+  X,
+  RotateCcw,
+  RefreshCw,
+  Mic,
+  MessageSquare
 } from "lucide-react";
 
 interface Message {
@@ -41,6 +45,199 @@ interface Message {
   };
   confidence?: number;
   timestamp: string;
+}
+
+
+const SUGGESTED_QUERIES: Record<string, string[]> = {
+  en: [
+    "What is the PM-KISAN scheme?",
+    "Who is eligible for Ayushman Bharat?",
+    "Which government schemes are available for students?",
+    "What schemes are available for women?",
+    "Which schemes are available in Uttarakhand?",
+    "How can I check my application status?"
+  ],
+  hi: [
+    "पीएम किसान सम्मान निधि योजना क्या है?",
+    "आयुष्मान भारत योजना के लिए कौन पात्र है?",
+    "छात्रों के लिए कौन सी सरकारी छात्रवृत्तियां हैं?",
+    "महिलाओं के लिए कौन सी कल्याणकारी योजनाएं हैं?",
+    "उत्तराखंड सरकार की प्रमुख योजनाएं कौन सी हैं?",
+    "आवेदन की स्थिति (Application Status) कैसे चेक करें?"
+  ],
+  bn: [
+    "পিএম কিষাণ সম্মান নিধি যোজনা কী?",
+    "আয়ুষ্মান ভারত যোজনার জন্য কারা যোগ্য?",
+    "ছাত্র-ছাত্রীদের জন্য কী কী স্কলারশিপ রয়েছে?",
+    "মহিলাদের জন্য কী কী সরকারি প্রকল্প আছে?",
+    "উত্তরাখণ্ড সরকারের প্রধান প্রকল্পগুলি কী?",
+    "আবেদনের স্থিতি (Application Status) কীভাবে যাচাই করবেন?"
+  ],
+  te: [
+    "పీఎం కిసాన్ పథకం అంటే ఏమిటి?",
+    "ఆయుష్మాన్ భారత్ పథకానికి ఎవరు అర్హులు?",
+    "విద్యార్థుల కోసం ఏ ప్రభుత్వ పథకాలు అందుబాటులో ఉన్నాయి?",
+    "మహిళల కోసం ఏ సంక్షేమ పథకాలు ఉన్నాయి?",
+    "ఉత్తరాఖండ్ ప్రభుత్వ పథకాలు ఏమిటి?",
+    "దరఖాస్తు స్థితిని ఎలా తనిఖీ చేయాలి?"
+  ],
+  ta: [
+    "பிஎம் கிசான் திட்டம் என்றால் என்ன?",
+    "ஆயுஷ்மான் பாரத் திட்டத்திற்கு யார் தகுதியானவர்கள்?",
+    "மாணவர்களுக்கான அரசு கல்வி உதவித்தொகை திட்டங்கள் எவை?",
+    "பெண்களுக்கான அரசு நலத்திட்டங்கள் என்ன?",
+    "உத்தரகாண்ட் அரசு திட்டங்கள் என்ன?",
+    "விண்ணப்ப நிலையை எவ்வாறு சரிபார்ப்பது?"
+  ],
+  mr: [
+    "पीएम किसान सन्मान निधी योजना काय आहे?",
+    "आयुष्मान भारत योजनेसाठी कोण पात्र आहे?",
+    "विद्यार्थ्यांसाठी कोणत्या सरकारी शिष्यवृत्ती योजना आहेत?",
+    "महिलांसाठी कोणत्या कल्याणकारी योजना आहेत?",
+    "उत्तराखंडच्या प्रमुख सरकारी योजना कोणत्या?",
+    "अर्जाची स्थिती (Application Status) कशी तपासावी?"
+  ],
+  gu: [
+    "પીએમ કિસાન યોજના શું છે?",
+    "આયુષ્માન ભારત યોજના માટે કોણ પાત્ર છે?",
+    "વિદ્યાર્થીઓ માટે કઈ સરકારી સ્કોલરશિપ ઉપલબ્ધ છે?",
+    "મહિલાઓ માટે કઈ સરકારી યોજનાઓ છે?",
+    "ઉત્તરાખંડની કઈ સરકારી યોજનાઓ છે?",
+    "અરજીની સ્થિતિ (Status) કેવી રીતે ચેક કરવી?"
+  ],
+  kn: [
+    "ಪಿಎಂ ಕಿಸಾನ್ ಸಮ್ಮಾನ್ ನಿಧಿ ಯೋಜನೆ ಎಂದರೇನು?",
+    "ಆಯುಷ್ಮಾನ್ ಭಾರತ್ ಯೋಜನೆಗೆ ಯಾರು ಅರ್ಹರು?",
+    "ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ಯಾವ ವಿದ್ಯಾರ್ಥಿವೇತನಗಳು ಲಭ್ಯವಿವೆ?",
+    "ಮಹಿಳೆಯರಿಗಾಗಿ ಯಾವ ಕಲ್ಯಾಣ ಯೋಜನೆಗಳಿವೆ?",
+    "ಉತ್ತರಾಖಂಡ ಸರ್ಕಾರದ ಯೋಜನೆಗಳು ಯಾವುವು?",
+    "ಅರ್ಜಿಯ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸುವುದು ಹೇಗೆ?"
+  ],
+  ml: [
+    "പിഎം കിസാൻ പദ്ധതി എന്താണ്?",
+    "ആയുഷ്മാൻ ഭാരതിന് ആർക്കൊക്കെ അർഹതയുണ്ട്?",
+    "വിദ്യാർത്ഥികൾക്കായി എന്തൊക്കെ സ്കോളർഷിപ്പുകൾ ലഭ്യമാണ്?",
+    "വനിതകൾക്കായി എന്തൊക്കെ ക്ഷേമപദ്ധതികൾ ലഭ്യമാണ്?",
+    "ഉത്തരാഖണ്ഡ് സർക്കാരിന്റെ പദ്ധതികൾ എന്തൊക്കെയാണ്?",
+    "അപേക്ഷയുടെ സ്റ്റാറ്റസ് എങ്ങനെ പരിശോധിക്കാം?"
+  ],
+  pa: [
+    "ਪੀਐਮ ਕਿਸਾਨ ਯੋਜਨਾ ਕੀ ਹੈ?",
+    "ਆਯੁਸ਼ਮਾਨ ਭਾਰਤ ਲਈ ਕੌਣ ਯੋਗ ਹੈ?",
+    "ਵਿਦਿਆਰਥੀਆਂ ਲਈ ਕਿਹੜੇ ਸਰਕਾਰੀ ਵਜ਼ੀਫ਼ੇ ਉਪਲਬਧ ਹਨ?",
+    "ਔਰਤਾਂ ਲਈ ਕਿਹੜੀਆਂ ਭਲਾਈ ਸਕੀਮਾਂ ਹਨ?",
+    "ਉੱਤਰਾਖੰਡ ਦੀਆਂ ਮੁੱਖ ਸਰਕਾਰੀ ਸਕੀਮਾਂ ਕਿਹੜੀਆਂ ਹਨ?",
+    "ਐਪਲੀਕੇਸ਼ਨ ਸਥਿਤੀ ਦੀ ਜਾਂਚ ਕਿਵੇਂ ਕਰੀਏ?"
+  ],
+  or: [
+    "ପିଏମ କିଷାନ ଯୋଜନା କ'ଣ?",
+    "ଆୟୁଷ୍ମାନ ଭାରତ ପାଇଁ କିଏ ଯୋଗ୍ୟ?",
+    "ଛାତ୍ରଛାତ୍ରୀଙ୍କ ପାଇଁ କେଉଁ ସରକାରୀ ସ୍କଲାରସିପ୍ ଉପଲବ୍ଧ?",
+    "ମହିଳାମାନଙ୍କ ପାଇଁ କେଉଁ କଲ୍ୟାଣକାରୀ ଯୋଜନା ରହିଛି?",
+    "ଉତ୍ତରାଖଣ୍ଡ ସରକାରଙ୍କ ଯୋଜନାଗୁଡ଼ିକ କ'ଣ?",
+    "ଆବେଦନ ସ୍ଥିତି କିପରି ଯାଞ୍ଚ କରିବେ?"
+  ],
+  as: [
+    "পিএম কিষাণ যোজনা কি?",
+    "আয়ুষ্মান ভাৰতৰ বাবে কোনে আবেদন কৰিব পাৰে?",
+    "ছাত্ৰ-ছাত্ৰীৰ বাবে কি কি চৰকাৰী বৃত্তি আছে?",
+    "মহিলাসকলৰ বাবে কি কি কল্যাণমূলক আঁচনি আছে?",
+    "উত্তৰাখণ্ড চৰকাৰৰ আঁচনিসমূহ কি?",
+    "আবেদনৰ স্থিতি কেনেকৈ পৰীক্ষা কৰিব?"
+  ]
+};
+
+// Formatter to render markdown headers, links, and bold text cleanly
+const renderFormattedMessageText = (text: string) => {
+  if (!text) return null;
+  const lines = text.split("\n");
+
+  return lines.map((line, lineIdx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      return <div key={lineIdx} className="h-2" />;
+    }
+
+    // Markdown Headers (### Scheme Name, etc.)
+    if (trimmed.startsWith("### ")) {
+      return (
+        <h4 key={lineIdx} className="font-extrabold text-[#104E8B] text-sm sm:text-base mt-2.5 mb-1 pb-1 border-b border-blue-100 flex items-center gap-1.5">
+          <span>{trimmed.replace(/^###\s+/, "")}</span>
+        </h4>
+      );
+    }
+    if (trimmed.startsWith("## ")) {
+      return (
+        <h3 key={lineIdx} className="font-black text-[#0A2540] text-base sm:text-lg mt-3 mb-1.5">
+          {trimmed.replace(/^##\s+/, "")}
+        </h3>
+      );
+    }
+
+    // Bullet points (- or * )
+    const isBullet = trimmed.startsWith("- ") || trimmed.startsWith("* ");
+    const content = isBullet ? trimmed.slice(2) : line;
+
+    // Parse bold text and markdown links [Label](url)
+    const parts: React.ReactNode[] = [];
+    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = linkRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(renderBoldSegments(content.substring(lastIndex, match.index), `${lineIdx}-${lastIndex}`));
+      }
+      const label = match[1];
+      const url = match[2];
+      parts.push(
+        <a
+          key={`link-${lineIdx}-${match.index}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-0.5 text-blue-600 hover:text-blue-800 font-bold underline decoration-blue-300 hover:decoration-blue-600 transition"
+        >
+          <span>{label}</span>
+          <ExternalLink className="w-3 h-3 inline shrink-0" />
+        </a>
+      );
+      lastIndex = linkRegex.lastIndex;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(renderBoldSegments(content.substring(lastIndex), `${lineIdx}-${lastIndex}`));
+    }
+
+    if (isBullet) {
+      return (
+        <div key={lineIdx} className="flex items-start space-x-2 my-1 text-xs sm:text-sm pl-1">
+          <span className="text-red-500 font-black mt-0.5">•</span>
+          <span className="flex-1 leading-relaxed">{parts}</span>
+        </div>
+      );
+    }
+
+    return (
+      <p key={lineIdx} className="my-1 leading-relaxed text-xs sm:text-sm">
+        {parts}
+      </p>
+    );
+  });
+};
+
+function renderBoldSegments(text: string, keyPrefix: string): React.ReactNode {
+  const segments = text.split(/(\*\*.*?\*\*)/g);
+  return segments.map((seg, idx) => {
+    if (seg.startsWith("**") && seg.endsWith("**")) {
+      return (
+        <strong key={`${keyPrefix}-${idx}`} className="font-bold text-gray-950">
+          {seg.slice(2, -2)}
+        </strong>
+      );
+    }
+    return seg;
+  });
 }
 
 interface AIChatWidgetProps {
@@ -67,6 +264,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ lang, onNavigateTab 
   const [activeAnalysisMode, setActiveAnalysisMode] = useState<string | null>(null);
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
   const [forwardInputText, setForwardInputText] = useState("");
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +279,25 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ lang, onNavigateTab 
   }, [messages, isTyping]);
 
   // Handle sending a message or query
+  
+  // Clear conversation history
+  const handleClearChat = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setMessages([
+      {
+        id: "welcome",
+        sender: "assistant",
+        text: lang === "hi"
+          ? "नमस्ते! मैं योजना सहायक एआई हूँ। आप किसी भी सरकारी योजना का नाम पूछ सकते हैं, संदिग्ध संदेश या लिंक पेस्ट कर सकते हैं, या दस्तावेज व पोस्टर जांच सकते हैं।"
+          : "Namaste! I am Yojana Sahayak AI. Ask about official government schemes, paste suspicious messages or links, or upload documents to verify legitimacy.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+    ]);
+    setLastFailedMessage(null);
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputMessage).trim();
     if (!text) return;
@@ -280,8 +497,45 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ lang, onNavigateTab 
         </svg>
       </div>
 
+      {/* TOP ACTION BAR: Clear Chat & Switch to Voice */}
+      <div className="flex justify-between items-center relative z-10 pb-3 mb-2 border-b border-blue-100/70">
+        <div className="flex items-center space-x-2">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-[#104E8B] text-xs font-black flex items-center space-x-1 border border-blue-200">
+            <Bot className="w-3.5 h-3.5" />
+            <span>AI Government Scheme Assistant</span>
+          </span>
+          <span className="hidden sm:inline-block text-[11px] text-gray-500">
+            {lang.toUpperCase()} • 12 Indian Languages Grounded
+          </span>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {onNavigateTab && (
+            <button
+              type="button"
+              onClick={() => onNavigateTab("voice")}
+              className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold shadow-2xs transition flex items-center space-x-1"
+              title="Open Voice Assistant"
+            >
+              <Mic className="w-3.5 h-3.5 text-red-600" />
+              <span>{lang === "hi" ? "आवाज सहायक" : "Voice Assistant"}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleClearChat}
+            className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs font-semibold shadow-2xs transition flex items-center space-x-1"
+            title="Clear Chat History"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-gray-500" />
+            <span className="hidden sm:inline">{lang === "hi" ? "चैट साफ़ करें" : "Clear Chat"}</span>
+          </button>
+        </div>
+      </div>
+
       {/* HEADER: "Identify & Check Fake Schemes Instantly" */}
-      <div className="text-center relative z-10 pt-2 pb-6">
+      <div className="text-center relative z-10 pt-1 pb-6">
         <h1 className="text-2xl sm:text-4xl font-black text-[#0A2540] tracking-tight">
           {t.aiHeroTitle || "Identify & Check Fake Schemes Instantly"}
         </h1>
@@ -402,9 +656,23 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ lang, onNavigateTab 
                 )}
 
                 {/* Message Body */}
-                <div className="whitespace-pre-line leading-relaxed font-medium">
-                  {msg.text}
+                <div className="leading-relaxed font-medium">
+                  {renderFormattedMessageText(msg.text)}
                 </div>
+
+                {/* Retry Button if this message was an error */}
+                {lastFailedMessage && msg.sender === "assistant" && msg.text.includes("issue reaching the welfare intelligence server") && (
+                  <div className="mt-2.5 pt-2 border-t border-rose-200">
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage(lastFailedMessage)}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>{lang === "hi" ? "पुनः प्रयास करें (Retry)" : "Retry Query"}</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Scam Threat Assessment Card if applicable */}
                 {msg.analysis && (
@@ -471,6 +739,27 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ lang, onNavigateTab 
           </div>
         )}
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* SUGGESTED QUESTIONS CHIPS ROW */}
+      <div className="relative z-10 mb-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          <span className="text-[11px] font-bold text-gray-500 shrink-0 flex items-center space-x-1 pl-1">
+            <Sparkles className="w-3 h-3 text-[#104E8B]" />
+            <span>{lang === "hi" ? "सुझाए गए प्रश्न:" : "Suggested Questions:"}</span>
+          </span>
+          {(SUGGESTED_QUERIES[lang] || SUGGESTED_QUERIES["en"]).map((qText, qIdx) => (
+            <button
+              key={qIdx}
+              type="button"
+              onClick={() => handleSendMessage(qText)}
+              disabled={isTyping}
+              className="px-3 py-1.5 rounded-full text-xs font-semibold transition shrink-0 bg-white hover:bg-blue-50 text-gray-800 hover:text-[#104E8B] border border-gray-200 hover:border-blue-300 shadow-2xs disabled:opacity-50"
+            >
+              {qText}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* FLOATING BOTTOM INPUT BAR (Matching Image 1) */}
