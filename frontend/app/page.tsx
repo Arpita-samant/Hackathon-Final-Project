@@ -151,7 +151,6 @@ export default function Home() {
         onLangChange={handleLangChange}
         userName={currentUser?.name || "Citizen"}
         userOccupation={currentUser?.occupation_category || "Farmer"}
-        userEmail={currentUser?.email || ""}
         isLoggedIn={!!currentUser}
         onOpenLogin={() => {
           setAuthMode("login");
